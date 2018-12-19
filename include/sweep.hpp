@@ -19,8 +19,9 @@
 
 namespace ppm
 {
-template <typename SweepVector>
-struct sweep_t {
+
+template <size_t NX>
+struct ppmlr_t : ppmlr_base<ppmlr_t<NX>, NX, NZ_GHOST> {
   using vector_type = SweepVector;
   using index_type = typename SweepVector::index_type;
 
@@ -60,12 +61,12 @@ struct sweep_t {
   // max svel in sweep
   double max_cdx;
 
-  sweep_t(hydro_physics_t& _hydro) : hydro(_hydro) {}
+  ppmlr_t(hydro_physics_t& _hydro) : hydro(_hydro) {}
 
-  ~sweep_t() = default;
+  ~ppmlr_t() = default;
 
   template <typename V>
-  inline void get_vars(const V& xe,
+  inline void put_vars(const V& xe,
                        const V& xc,
                        const V& dx,
                        const V& rho,
@@ -89,11 +90,10 @@ struct sweep_t {
     for (index_type i = vector_type::j0(); i < vector_type::jM(); ++i)
       fluid_v[ENT][i] =
           fluid_v[PRS][i] / (fluid_v[RHO][i] * hydro.gammam1) + ekin[i];
-
   }
 
   template <typename V>
-  inline void put_vars(V& rho, V& prs, V& xvel, V& yvel, V& zvel, V& f) {
+  inline void get_vars(V& rho, V& prs, V& xvel, V& yvel, V& zvel, V& f) {
     for (index_type i = vector_type::j0(); i < vector_type::jM(); ++i) {
       index_type n = i - vector_type::j0();
       rho[n] = fluid_v[RHO][i];

@@ -62,14 +62,14 @@ struct __attribute__((aligned(16))) ppmlr_vector_t {
   // constexpr inline double inz(size_t idx) const;
   constexpr inline void clear() { fill(0.0); };
   constexpr inline void fill(const double value) {
-    for (auto i = i0(); i < iN(); ++i)
+    for (auto i = i0; i < iN; ++i)
       storage_[i] = value;
   };
 
   template <typename OtherVec>
   constexpr inline void assign(const OtherVec& v) {
-    for (auto i = j0(); i < jM(); ++i)
-      storage_[i] = v[i - j0()];
+    for (auto i = j0; i < jM; ++i)
+      storage_[i] = v[i - j0];
   }
 
   constexpr inline double sum() const {
@@ -77,7 +77,7 @@ struct __attribute__((aligned(16))) ppmlr_vector_t {
       return storage_.sum();
     } else {
       double sum = 0.0;
-      for (auto i = 0; i < iN(); ++i) {
+      for (auto i = 0; i < iN; ++i) {
         sum += storage_[i];
       }
       return sum;
