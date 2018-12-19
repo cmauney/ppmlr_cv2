@@ -1,0 +1,5 @@
+*.log
+*.dat
+*.plt
+build/
+ppm1d

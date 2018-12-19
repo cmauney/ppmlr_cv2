@@ -1,0 +1,397 @@
+Creating directories
+make[1]: Entering directory '/home/mauneyc/scratch/hydro/ppmlr_cpp'
+Compiling: src/main.cpp -> build/src/main.o
+g++  -std=c++17 -g3 -Wall -Wextra -Og -ggdb -I include/ -I /usr/include  -MP -MMD -c src/main.cpp -o build/src/main.o
+In file included from src/main.cpp:9:
+include/sweep.hpp: In instantiation of ‘void ppm::sweep_t<SweepVector>::dosweep() [with SweepVector = ppm::sweep_vector_t<std::valarray<double>, 6, 100>]’:
+src/main.cpp:138:20:   required from here
+include/sweep.hpp:328:29: error: no match for ‘operator<<’ (operand types are ‘std::basic_ostream<char>’ and ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’})
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:108:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(std::basic_ostream<_CharT, _Traits>::__ostream_type& (*)(std::basic_ostream<_CharT, _Traits>::__ostream_type&)) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(__ostream_type& (*__pf)(__ostream_type&))
+       ^~~~~~~~
+/usr/include/c++/8/ostream:108:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘std::basic_ostream<char>::__ostream_type& (*)(std::basic_ostream<char>::__ostream_type&)’ {aka ‘std::basic_ostream<char>& (*)(std::basic_ostream<char>&)’}
+/usr/include/c++/8/ostream:117:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(std::basic_ostream<_CharT, _Traits>::__ios_type& (*)(std::basic_ostream<_CharT, _Traits>::__ios_type&)) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>; std::basic_ostream<_CharT, _Traits>::__ios_type = std::basic_ios<char>]’
+       operator<<(__ios_type& (*__pf)(__ios_type&))
+       ^~~~~~~~
+/usr/include/c++/8/ostream:117:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘std::basic_ostream<char>::__ios_type& (*)(std::basic_ostream<char>::__ios_type&)’ {aka ‘std::basic_ios<char>& (*)(std::basic_ios<char>&)’}
+/usr/include/c++/8/ostream:127:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(std::ios_base& (*)(std::ios_base&)) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(ios_base& (*__pf) (ios_base&))
+       ^~~~~~~~
+/usr/include/c++/8/ostream:127:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘std::ios_base& (*)(std::ios_base&)’
+/usr/include/c++/8/ostream:166:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long int) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(long __n)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:166:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘long int’
+/usr/include/c++/8/ostream:170:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(unsigned long __n)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:170:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘long unsigned int’
+/usr/include/c++/8/ostream:174:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(bool) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(bool __n)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:174:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘bool’
+In file included from /usr/include/c++/8/ostream:693,
+                 from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/bits/ostream.tcc:91:5: note: candidate: ‘std::basic_ostream<_CharT, _Traits>& std::basic_ostream<_CharT, _Traits>::operator<<(short int) [with _CharT = char; _Traits = std::char_traits<char>]’
+     basic_ostream<_CharT, _Traits>::
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/ostream.tcc:91:5: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘short int’
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:181:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(short unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(unsigned short __n)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:181:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘short unsigned int’
+In file included from /usr/include/c++/8/ostream:693,
+                 from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/bits/ostream.tcc:105:5: note: candidate: ‘std::basic_ostream<_CharT, _Traits>& std::basic_ostream<_CharT, _Traits>::operator<<(int) [with _CharT = char; _Traits = std::char_traits<char>]’
+     basic_ostream<_CharT, _Traits>::
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/ostream.tcc:105:5: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘int’
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:192:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(unsigned int __n)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:192:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘unsigned int’
+/usr/include/c++/8/ostream:201:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long long int) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(long long __n)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:201:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘long long int’
+/usr/include/c++/8/ostream:205:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long long unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(unsigned long long __n)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:205:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘long long unsigned int’
+/usr/include/c++/8/ostream:220:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(double) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(double __f)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:220:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘double’
+/usr/include/c++/8/ostream:224:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(float) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(float __f)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:224:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘float’
+/usr/include/c++/8/ostream:232:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long double) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(long double __f)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:232:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘long double’
+/usr/include/c++/8/ostream:245:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(const void*) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__ostream_type = std::basic_ostream<char>]’
+       operator<<(const void* __p)
+       ^~~~~~~~
+/usr/include/c++/8/ostream:245:7: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘const void*’
+In file included from /usr/include/c++/8/ostream:693,
+                 from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/bits/ostream.tcc:119:5: note: candidate: ‘std::basic_ostream<_CharT, _Traits>& std::basic_ostream<_CharT, _Traits>::operator<<(std::basic_ostream<_CharT, _Traits>::__streambuf_type*) [with _CharT = char; _Traits = std::char_traits<char>; std::basic_ostream<_CharT, _Traits>::__streambuf_type = std::basic_streambuf<char>]’
+     basic_ostream<_CharT, _Traits>::
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/ostream.tcc:119:5: note:   no known conversion for argument 1 from ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} to ‘std::basic_ostream<char>::__streambuf_type*’ {aka ‘std::basic_streambuf<char>*’}
+In file included from /usr/include/c++/8/bits/basic_string.h:48,
+                 from /usr/include/c++/8/string:52,
+                 from /usr/include/c++/8/bits/locale_classes.h:40,
+                 from /usr/include/c++/8/bits/ios_base.h:41,
+                 from /usr/include/c++/8/ios:42,
+                 from /usr/include/c++/8/istream:38,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/string_view:545:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, std::basic_string_view<_CharT, _Traits>)’
+     operator<<(basic_ostream<_CharT, _Traits>& __os,
+     ^~~~~~~~
+/usr/include/c++/8/string_view:545:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’ is not derived from ‘std::basic_string_view<_CharT, _Traits>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/string:52,
+                 from /usr/include/c++/8/bits/locale_classes.h:40,
+                 from /usr/include/c++/8/bits/ios_base.h:41,
+                 from /usr/include/c++/8/ios:42,
+                 from /usr/include/c++/8/istream:38,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/bits/basic_string.h:6323:5: note: candidate: ‘template<class _CharT, class _Traits, class _Alloc> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, const std::__cxx11::basic_string<_CharT, _Traits, _Allocator>&)’
+     operator<<(basic_ostream<_CharT, _Traits>& __os,
+     ^~~~~~~~
+/usr/include/c++/8/bits/basic_string.h:6323:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} is not derived from ‘const std::__cxx11::basic_string<_CharT, _Traits, _Allocator>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/bits/ios_base.h:46,
+                 from /usr/include/c++/8/ios:42,
+                 from /usr/include/c++/8/istream:38,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/system_error:217:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, const std::error_code&)’
+     operator<<(basic_ostream<_CharT, _Traits>& __os, const error_code& __e)
+     ^~~~~~~~
+/usr/include/c++/8/system_error:217:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘const std::error_code&’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:497:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, _CharT)’
+     operator<<(basic_ostream<_CharT, _Traits>& __out, _CharT __c)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:497:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   deduced conflicting types for parameter ‘_CharT’ (‘char’ and ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’)
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:502:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, char)’
+     operator<<(basic_ostream<_CharT, _Traits>& __out, char __c)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:502:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘char’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:508:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(std::basic_ostream<char, _Traits>&, char)’
+     operator<<(basic_ostream<char, _Traits>& __out, char __c)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:508:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘char’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:514:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(std::basic_ostream<char, _Traits>&, signed char)’
+     operator<<(basic_ostream<char, _Traits>& __out, signed char __c)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:514:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘signed char’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:519:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(std::basic_ostream<char, _Traits>&, unsigned char)’
+     operator<<(basic_ostream<char, _Traits>& __out, unsigned char __c)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:519:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘unsigned char’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:539:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, const _CharT*)’
+     operator<<(basic_ostream<_CharT, _Traits>& __out, const _CharT* __s)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:539:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   mismatched types ‘const _CharT*’ and ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/ostream:693,
+                 from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/bits/ostream.tcc:321:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, const char*)’
+     operator<<(basic_ostream<_CharT, _Traits>& __out, const char* __s)
+     ^~~~~~~~
+/usr/include/c++/8/bits/ostream.tcc:321:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘const char*’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:556:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(std::basic_ostream<char, _Traits>&, const char*)’
+     operator<<(basic_ostream<char, _Traits>& __out, const char* __s)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:556:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘const char*’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:569:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(std::basic_ostream<char, _Traits>&, const signed char*)’
+     operator<<(basic_ostream<char, _Traits>& __out, const signed char* __s)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:569:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘const signed char*’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:574:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(std::basic_ostream<char, _Traits>&, const unsigned char*)’
+     operator<<(basic_ostream<char, _Traits>& __out, const unsigned char* __s)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:574:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘((ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >*)this)->ppm::sweep_t<ppm::sweep_vector_t<std::valarray<double>, 6, 100> >::fluid_v.std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::operator[](2)’ (type ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’}) to type ‘const unsigned char*’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/istream:39,
+                 from /usr/include/c++/8/fstream:38,
+                 from src/main.cpp:2:
+/usr/include/c++/8/ostream:682:5: note: candidate: ‘template<class _Ostream, class _Tp> typename std::enable_if<std::__and_<std::__not_<std::is_lvalue_reference<_Tp> >, std::__is_convertible_to_basic_ostream<_Ostream>, std::__is_insertable<typename std::__is_convertible_to_basic_ostream<_Tp>::__ostream_type, const _Tp&, void> >::value, typename std::__is_convertible_to_basic_ostream<_Tp>::__ostream_type>::type std::operator<<(_Ostream&&, const _Tp&)’
+     operator<<(_Ostream&& __os, const _Tp& __x)
+     ^~~~~~~~
+/usr/include/c++/8/ostream:682:5: note:   template argument deduction/substitution failed:
+/usr/include/c++/8/ostream: In substitution of ‘template<class _Ostream, class _Tp> typename std::enable_if<std::__and_<std::__not_<std::is_lvalue_reference<_Tp> >, std::__is_convertible_to_basic_ostream<_Ostream>, std::__is_insertable<typename std::__is_convertible_to_basic_ostream<_Tp>::__ostream_type, const _Tp&, void> >::value, typename std::__is_convertible_to_basic_ostream<_Tp>::__ostream_type>::type std::operator<<(_Ostream&&, const _Tp&) [with _Ostream = std::basic_ostream<char>&; _Tp = ppm::sweep_vector_t<std::valarray<double>, 6, 100>]’:
+include/sweep.hpp:328:29:   required from ‘void ppm::sweep_t<SweepVector>::dosweep() [with SweepVector = ppm::sweep_vector_t<std::valarray<double>, 6, 100>]’
+src/main.cpp:138:20:   required from here
+/usr/include/c++/8/ostream:682:5: error: no type named ‘type’ in ‘struct std::enable_if<false, std::basic_ostream<char>&>’
+In file included from include/gsl/gsl_util:23,
+                 from include/gsl/span:22,
+                 from include/gsl/gsl_algorithm:21,
+                 from include/gsl/gsl:20,
+                 from src/main.cpp:6:
+include/sweep.hpp: In instantiation of ‘void ppm::sweep_t<SweepVector>::dosweep() [with SweepVector = ppm::sweep_vector_t<std::valarray<double>, 6, 100>]’:
+src/main.cpp:138:20:   required from here
+/usr/include/c++/8/cstddef:124:5: note: candidate: ‘template<class _IntegerType> constexpr std::__byte_op_t<_IntegerType> std::operator<<(std::byte, _IntegerType)’
+     operator<<(byte __b, _IntegerType __shift) noexcept
+     ^~~~~~~~
+/usr/include/c++/8/cstddef:124:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   cannot convert ‘std::operator<< <std::char_traits<char> >((* & std::cout.std::basic_ostream<char>::operator<<(i)), ((const char*)" "))’ (type ‘std::basic_ostream<char>’) to type ‘std::byte’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/memory:81,
+                 from include/gsl/span:32,
+                 from include/gsl/gsl_algorithm:21,
+                 from include/gsl/gsl:20,
+                 from src/main.cpp:6:
+/usr/include/c++/8/bits/shared_ptr.h:66:5: note: candidate: ‘template<class _Ch, class _Tr, class _Tp, __gnu_cxx::_Lock_policy _Lp> std::basic_ostream<_CharT, _Traits>& std::operator<<(std::basic_ostream<_CharT, _Traits>&, const std::__shared_ptr<_Tp, _Lp>&)’
+     operator<<(std::basic_ostream<_Ch, _Tr>& __os,
+     ^~~~~~~~
+/usr/include/c++/8/bits/shared_ptr.h:66:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} is not derived from ‘const std::__shared_ptr<_Tp, _Lp>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/valarray:592,
+                 from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/bits/valarray_after.h:410:5: note: candidate: ‘template<class _Dom1, class _Dom2> std::_Expr<std::_BinClos<std::__shift_left, std::_Expr, std::_Expr, _Dom1, _Dom2>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const std::_Expr<_Dom1, typename _Dom1::value_type>&, const std::_Expr<_Dom2, typename _Dom2::value_type>&)’
+     _DEFINE_EXPR_BINARY_OPERATOR(<<, __shift_left)
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/valarray_after.h:410:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/valarray:592,
+                 from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/bits/valarray_after.h:410:5: note: candidate: ‘template<class _Dom> std::_Expr<std::_BinClos<std::__shift_left, std::_Expr, std::_Constant, _Dom, typename _Dom::value_type>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const std::_Expr<_Dom1, typename _Dom1::value_type>&, const typename _Dom::value_type&)’
+     _DEFINE_EXPR_BINARY_OPERATOR(<<, __shift_left)
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/valarray_after.h:410:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/valarray:592,
+                 from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/bits/valarray_after.h:410:5: note: candidate: ‘template<class _Dom> std::_Expr<std::_BinClos<std::__shift_left, std::_Constant, std::_Expr, typename _Dom::value_type, _Dom>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const typename _Dom::value_type&, const std::_Expr<_Dom1, typename _Dom1::value_type>&)’
+     _DEFINE_EXPR_BINARY_OPERATOR(<<, __shift_left)
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/valarray_after.h:410:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/valarray:592,
+                 from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/bits/valarray_after.h:410:5: note: candidate: ‘template<class _Dom> std::_Expr<std::_BinClos<std::__shift_left, std::_Expr, std::_ValArray, _Dom, typename _Dom::value_type>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const std::_Expr<_Dom1, typename _Dom1::value_type>&, const std::valarray<typename _Dom::value_type>&)’
+     _DEFINE_EXPR_BINARY_OPERATOR(<<, __shift_left)
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/valarray_after.h:410:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from /usr/include/c++/8/valarray:592,
+                 from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/bits/valarray_after.h:410:5: note: candidate: ‘template<class _Dom> std::_Expr<std::_BinClos<std::__shift_left, std::_ValArray, std::_Expr, typename _Dom::value_type, _Dom>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const std::valarray<typename _Dom::value_type>&, const std::_Expr<_Dom1, typename _Dom1::value_type>&)’
+     _DEFINE_EXPR_BINARY_OPERATOR(<<, __shift_left)
+     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/bits/valarray_after.h:410:5: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/valarray:1180:1: note: candidate: ‘template<class _Tp> std::_Expr<std::_BinClos<std::__shift_left, std::_ValArray, std::_ValArray, _Tp, _Tp>, typename std::__fun<std::__shift_left, _Tp>::result_type> std::operator<<(const std::valarray<_Tp>&, const std::valarray<_Tp>&)’
+ _DEFINE_BINARY_OPERATOR(<<, __shift_left)
+ ^~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/valarray:1180:1: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::valarray<_Tp>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/valarray:1180:1: note: candidate: ‘template<class _Tp> std::_Expr<std::_BinClos<std::__shift_left, std::_ValArray, std::_Constant, _Tp, _Tp>, typename std::__fun<std::__shift_left, _Tp>::result_type> std::operator<<(const std::valarray<_Tp>&, const _Tp&)’
+ _DEFINE_BINARY_OPERATOR(<<, __shift_left)
+ ^~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/valarray:1180:1: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::valarray<_Tp>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+In file included from include/flatten.hpp:8,
+                 from include/boundary_conditions.hpp:10,
+                 from include/sweep.hpp:9,
+                 from src/main.cpp:9:
+/usr/include/c++/8/valarray:1180:1: note: candidate: ‘template<class _Tp> std::_Expr<std::_BinClos<std::__shift_left, std::_Constant, std::_ValArray, _Tp, _Tp>, typename std::__fun<std::__shift_left, _Tp>::result_type> std::operator<<(const _Tp&, const std::valarray<_Tp>&)’
+ _DEFINE_BINARY_OPERATOR(<<, __shift_left)
+ ^~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/8/valarray:1180:1: note:   template argument deduction/substitution failed:
+In file included from src/main.cpp:9:
+include/sweep.hpp:328:29: note:   ‘std::array<ppm::sweep_vector_t<std::valarray<double>, 6, 100>, 7>::value_type’ {aka ‘ppm::sweep_vector_t<std::valarray<double>, 6, 100>’} is not derived from ‘const std::valarray<_Tp>’
+       std::cout << i << " " << fluid_v[XVL] << std::endl;
+       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+make[1]: *** [Makefile:77: build/src/main.o] Error 1
+make[1]: Leaving directory '/home/mauneyc/scratch/hydro/ppmlr_cpp'
+make: *** [Makefile:41: release] Error 2
