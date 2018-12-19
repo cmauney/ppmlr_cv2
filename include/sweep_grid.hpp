@@ -12,11 +12,43 @@
 
 namespace ppm
 {
+namespace geo {
+struct planar_geo_t {
+  constexpr planar_geo_t() {}
+  constexpr inline double volume(const double x, const double dx) const {
+    return dx;
+  }
+  constexpr inline double area_mid(const double x0, const double xn) const {
+    return 1.0;
+  }
+  constexpr inline double overlap_volume(const double x0,
+                                         const double xn) const {
+    return xn - x0;
+  }
+};
 
-template <typename SweepVector>
-struct sweep_grid_t {
-  using vector_type = SweepVector;
-  using index_type = typename SweepVector::index_type;
+struct cylin_geo_t {
+  constexpr cylin_geo_t() {}
+  constexpr inline double volume(const double x, const double dx) const {
+    return dx * (x + half * dx);
+  }
+  constexpr inline double area_mid(const double x0, const double xn) const {
+    return half * (x0 + xn);
+  }
+  constexpr inline double overlap_volume(const double x0,
+                                         const double xn) const {
+    auto dx = xn - x0;
+    return dx * (x0 + half * dx);
+  }
+};
+
+}  // namespace geo
+
+template <typename PPMVector, typename GeometorType>
+struct ppm_grid_t {
+  using vector_type = PPMVector;
+  using index_type = typename vector_type::index_type;
+  using geo_type = GeometorType;
 
   // grid values
   std::array<vector_type, 2> xe, xc, dx, dvol;
@@ -30,53 +62,30 @@ struct sweep_grid_t {
   //  sweep_vector_t<NZ_SWEEP> q;
 
   // geometry variable
-  GEO geom;
+  geo_type geometer;
   double radius;
 
-  sweep_grid_t()
-      : geom(GEO::CART),
-        radius(1.0) {}
+  ppm_grid_t() : radius(1.0) {}
 
-  inline void build_volume(const index_type ti) {
-    switch (geom) {
-      case GEO::CART:
-        for (index_type i = vector_type::i0(); i < vector_type::iN(); ++i)
-          dvol[ti][i] = dx[ti][i];
-        break;
-      default:
-        std::cerr << "not a geo i kno\n";
-        std::exit(1);
+  template <index_type I>
+  constexpr inline void build_volume() {
+    for (auto i = 0; i < vector_type::i0; ++i) {
+      dvol[I][i] = geometer.volume(xe[I][i], dx[I][i]);
     }
   }
 
-  inline void build_amid() {
-    switch (geom) {
-      case GEO::CART:
-        for (index_type i = vector_type::i0(); i < vector_type::iN(); ++i)
-          amid[i] = 1.0;
-        break;
-      case GEO::CYLIN:
-        for (index_type i = vector_type::i0(); i < vector_type::iN(); ++i)
-          amid[i] = 0.5 * (xe[1][i] + xe[0][i]);
-        break;
-      default:
-        std::cerr << "not a geo i kno\n";
-        std::exit(1);
+  constexpr inline void build_amid() {
+    for (auto i = 0; i < vector_type::i0; ++i) {
+      amid[i] = geometer.overlap_area(xe[0][i], xe[1][i]);
     }
   }
 
-  inline void build_overlap() {
-    switch (geom) {
-      case GEO::CART:
-        for (index_type i = vector_type::j0(); i < vector_type::jM() + 1; ++i) {
-          xnolap[i] = xe[1][i] - xe[0][i];
-        }
-        break;
-      default:
-        std::cerr << "not a geo i kno\n";
-        std::exit(1);
+  constexpr inline void build_overlap() {
+    for (auto i = 0; i < vector_type::i0; ++i) {
+      xnolap[i] = geometer.overlap_volume(xe[0][i], xe[0][i]);
     }
-    for (index_type i = vector_type::j0(); i < vector_type::jM() + 1; ++i) {
+
+    for (auto i = vector_type::j0; i < vector_type::jM + 1; ++i) {
       xndiff[i] = xe[1][i] - xe[0][i];
     }
   }
@@ -88,17 +97,17 @@ struct sweep_grid_t {
       __dx[i] = dx[0][i];
       __dvol[i] = dvol[0][i];
     }
-  __xe[vector_type::iN()] = xe[0][vector_type::iN()];
+    //  __xe[vector_type::iN()] = xe[0][vector_type::iN()];
   }
 
   inline void retieve_coords() {
-    for (index_type i = vector_type::i0(); i < vector_type::iN(); ++i) {
+    for (index_type i = vector_type::i0; i < vector_type::iN; ++i) {
       xe[0][i] = __xe[i];
       xc[0][i] = __xc[i];
       dx[0][i] = __dx[i];
       dvol[0][i] = __dvol[i];
     }
-    xe[0][vector_type::iN()] = __xe[vector_type::iN()];
+    //    xe[0][vector_type::iN()] = __xe[vector_type::iN()];
   }
 };
 

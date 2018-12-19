@@ -88,7 +88,7 @@ struct __attribute__((aligned(16))) ppmlr_vector_t {
       return storage_.max();
     else {
       double maxv = std::numeric_limits<double>::lowest();
-      for (auto i = 0; i < iN(); ++i) {
+      for (auto i = 0; i < iN; ++i) {
         maxv = std::max(maxv, storage_[i]);
       }
       return maxv;
