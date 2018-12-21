@@ -20,24 +20,27 @@
 namespace ppm
 {
 
-template <size_t NX>
-struct ppmlr_t : ppmlr_base<ppmlr_t<NX>, NX, NZ_GHOST> {
-  using vector_type = SweepVector;
-  using index_type = typename SweepVector::index_type;
+template <typename PPMVector, typename GridType, size_t NX>
+struct ppmlr_t {
+  using vector_type = PPMVector;
+  using index_type = typename vector_type::index_type;
 
-  using grid_type = sweep_grid_t<vector_type>;
-  using bc_type = boundary_conditions_t<vector_type>;
+  using grid_type = GridType;
+  using bc_type = boundary_conditions_t<vector_type, grid_type>;
+  using parabola_type = parabola_t<vector_type>;
+  using state_domain_type = state_domain_t<vector_type>;
+  using state_type = state_t<parabola_type, state_domain_type>;
 
-  using parabola_set = parabola_set_t<vector_type>;
-  using state_set = state_set_t<vector_type>;
-  using riemann = riemann_t<vector_type>;
+  using parabola_set = parabola_set_t<parabola_type>;
+  using state_set = state_set_t<state_type, N_STATEV>;
+  using riemann = riemann_t<vector_type, state_type>;
 
   const hydro_physics_t& hydro;  // reference to 'globals'
 
   // coordinate vars
   grid_type grid;
   // fluid vars
-  std::array<vector_type, N_FLUIDV> fluid_v;
+  FluidVars<vector_type> fluid_v;
 
   // boundary do-er
   bc_type bc;

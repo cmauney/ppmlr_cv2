@@ -31,4 +31,7 @@ constexpr double omega1 = 0.75;
 constexpr double omega2 = 5.0;
 constexpr double epsilon = 0.33;
 
+template <class PPMVector>
+using FluidVars = std::array<PPMVector, N_FLUIDV>;
+
 }  // namespace ppm

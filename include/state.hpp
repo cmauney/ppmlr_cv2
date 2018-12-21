@@ -79,9 +79,6 @@ struct state_set_t {
     for (index_type i = 0; i < NSt; ++i) {
       states[i].build_state(recos[fluid_ids[i]], domain);
     }
-    /*     auto msg = "states " + std::to_string(__LINE__);
-         chkzero(2, nx + 2 * NZ_GHOST - 2, states[RHO].l, "lr", msg);
-         chkzero(2, nx + 2 * NZ_GHOST - 2, states[RHO].r, "rr", msg, true);*/
   }
 
   inline const state_type& operator[](const FLUID_VI fi) const {

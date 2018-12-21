@@ -38,6 +38,7 @@ struct cylin_geo_t {
   constexpr inline double overlap_volume(const double x0,
                                          const double xn) const {
     auto dx = xn - x0;
+
     return dx * (x0 + half * dx);
   }
 };

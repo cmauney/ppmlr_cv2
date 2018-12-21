@@ -15,10 +15,11 @@
 
 namespace ppm {
 
-template <typename PPMVector>
+template <typename PPMVector, typename Grid>
 struct boundary_conditions_t {
   using vector_type = PPMVector;
   using index_type = typename vector_type::index_type;
+  using grid_type = Grid;
 
   boundary_conditions_t() = default;
   ~boundary_conditions_t() = default;
@@ -33,8 +34,7 @@ struct boundary_conditions_t {
     }
   }
 
-  inline void apply(sweep_grid_t<vector_type>& g,
-                    std::array<vector_type, N_FLUIDV>& vars) {
+  inline void apply(grid_type& g, FluidVars<PPMVector>& vars) {
     reflect_bc(g.dx[0]);
     reflect_bc(vars[RHO]);
     reflect_bc(vars[PRS]);
@@ -52,8 +52,8 @@ struct boundary_conditions_t {
       g.xe[0][ri + i] = g.xe[0][ri + i - 1] + g.dx[0][ri + i - 1];
     }
 
-    g.xe[0][vector_type::iN()] =
-        g.xe[0][vector_type::iN() - 1] + g.dx[0][vector_type::iN() - 1];
+    //    g.xe[0][vector_type::iN()] =
+    //        g.xe[0][vector_type::iN() - 1] + g.dx[0][vector_type::iN() - 1];
     /*
 
         for (size_t i = 0; i < NZ_GHOST; ++i) {
