@@ -11,8 +11,8 @@
 #include "parabola.hpp"
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
+#include "ppm_grid.hpp"
 #include "ppm_util.hpp"
-#include "sweep_grid.hpp"
 
 namespace ppm
 {

@@ -10,8 +10,8 @@
 #include "hydro_physics.hpp"
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
-#include "sweep_grid.hpp"
-#include "sweep_vector.hpp"
+#include "ppm_grid.hpp"
+#include "ppm_vector.hpp"
 
 namespace ppm {
 
@@ -25,12 +25,12 @@ struct boundary_conditions_t {
   ~boundary_conditions_t() = default;
 
   void reflect_bc(vector_type& v, double symm = 1.0) {
-    for (index_type i = vector_type::i0(); i < vector_type::j0(); ++i) {
-      v[vector_type::j0() - i - 1] = symm * v[i + vector_type::j0()];
+    for (index_type i = vector_type::i0; i < vector_type::j0; ++i) {
+      v[vector_type::j0 - i - 1] = symm * v[i + vector_type::j0];
     }
 
-    for (index_type i = vector_type::i0(); i < vector_type::j0(); ++i) {
-      v[vector_type::jM() + i] = symm * v[vector_type::jM() - i - 1];
+    for (index_type i = vector_type::i0; i < vector_type::j0; ++i) {
+      v[vector_type::jM + i] = symm * v[vector_type::jM - i - 1];
     }
   }
 
@@ -44,11 +44,11 @@ struct boundary_conditions_t {
     reflect_bc(vars[ENT]);
     reflect_bc(vars[FLT]);
 
-    for (size_t i = 0; i < vector_type::j0(); ++i) {
-      g.xe[0][vector_type::j0() - i - 1] =
-          g.xe[0][vector_type::j0() - i] - g.dx[0][vector_type::j0() - i - 1];
+    for (size_t i = 0; i < vector_type::j0; ++i) {
+      g.xe[0][vector_type::j0 - i - 1] =
+          g.xe[0][vector_type::j0 - i] - g.dx[0][vector_type::j0 - i - 1];
 
-      auto ri = vector_type::jM();
+      auto ri = vector_type::jM;
       g.xe[0][ri + i] = g.xe[0][ri + i - 1] + g.dx[0][ri + i - 1];
     }
 

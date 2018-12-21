@@ -8,9 +8,9 @@
 
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
+#include "ppm_grid.hpp"
 #include "ppm_util.hpp"
-#include "sweep_grid.hpp"
-#include "sweep_vector.hpp"
+#include "ppm_vector.hpp"
 
 namespace ppm
 {
@@ -24,7 +24,7 @@ struct parabola_basis_t {
   vector_type a, b, c, d, ai, bi, ci;
 
   // basis
-  std::array<double, vector_type::iN() * 5> basis;
+  std::array<double, vector_type::iN * 5> basis;
 
   // spans/views
   parabola_basis_t() = default;
@@ -178,7 +178,7 @@ struct parabola_set_t {
   using index_type = typename vector_type::index_type;
 
   using parabola = ParabolaType;
-  using parabola_basis = typename parabola::basis_type;
+  using parabola_basis = parabola_basis_t<vector_type>;
   using parabola_array = FluidVars<parabola>;
 
   parabola_basis base;
@@ -189,7 +189,7 @@ struct parabola_set_t {
 
   inline void prepare(const vector_type& dx) { base.prepare(dx); }
 
-  template <index_type FN>
+  template <size_t FN>
   constexpr inline void build(const FluidVars<vector_type>& fluid_v,
                               const vector_type& flat,
                               const std::array<FLUID_VI, FN>& fidx) {
@@ -201,5 +201,7 @@ struct parabola_set_t {
   constexpr inline const parabola& operator[](const index_type idx) const {
     return parabolas[idx];
   }
+
+  constexpr inline const parabola_array& arr() const { return parabolas; }
 };
 }// namespace ppm

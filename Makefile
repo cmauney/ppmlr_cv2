@@ -22,12 +22,12 @@ OBJECTS = $(SOURCES:$(SRC_PATH)/%.$(SRC_EXT)=$(BUILD_PATH)/%.o)
 DEPS = $(OBJECTS:.o=.d)
 
 # flags #
-STD_FLAGS = -std=c++17
+STD_FLAGS = -std=c++17 -fdiagnostics-color
 DBG_FLAGS = -g3 -Wall -Wextra -Og -ggdb
 OPT_FLAGS = -g -O2 -march=native
 XPT_FLAGS = -g -O3 -march=native
 #XPT_FLAGS = -g -Ofast -ffast-math -march=native
-COMPILE_FLAGS = $(STD_FLAGS) $(XPT_FLAGS)
+COMPILE_FLAGS = $(STD_FLAGS) $(DBG_FLAGS)
 INCLUDES = -I include/ -I /usr/include 
 # Space-separated pkg-config libraries used by this project
 LIBS =  

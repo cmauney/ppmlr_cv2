@@ -8,9 +8,14 @@
 #include "gsl/gsl"
 
 #include "hydro_physics.hpp"
-#include "sweep.hpp"
+#include "ppm_grid.hpp"
+#include "ppm_vector.hpp"
+#include "ppmlr.hpp"
 
-constexpr size_t NCYC = 500;
+#define _GNU_SOURCE
+#include <fenv.h>
+
+constexpr size_t NCYC = 50;
 
 constexpr double pr = 0.1;
 constexpr double dr = 0.125;
@@ -18,6 +23,11 @@ constexpr double pl = 1.0;
 constexpr double dl = 1.0;
 
 constexpr double my_gamma = 1.4;
+
+using VecType = std::valarray<double>;
+using SweepVec = ppm::ppmlr_vector_t<VecType, ppm::NZ_GHOST, ppm::GRID_NX>;
+
+using SWEEP_XGEO = ppm::geo::planar_geo_t;
 
 template <typename V>
 auto gridder(size_t n, double xmin, double xmax) {
@@ -110,23 +120,26 @@ void courant(ppm::hydro_physics_t& h,
 
 }
 */
+
+struct sweep_x {
+  ppm::ppmlr_t<SweepVec, SWEEP_XGEO, ppm::GRID_NX> ppmlr_drv;
+
+  sweep_x(const ppm::hydro_physics_t& h) : ppmlr_drv(h) {}
+};
 int main()
 {
-  using VecType = std::valarray<double>;
-  using SweepVec = ppm::sweep_vector_t<VecType, ppm::NZ_GHOST, ppm::GRID_NX>;
-
+  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   ppm::hydro_physics_t hydro(my_gamma);
+  sweep_x swpx(hydro);
 
   auto [xe, xc, dx] = gridder<VecType>(ppm::GRID_NX, 0.0, 1.0);
   auto [r, p, u, e, f] = initial_conditions<VecType>(ppm::GRID_NX, xc);
 
-  ppm::sweep_t<SweepVec> sweepx(hydro);
-
-  auto svel = (std::sqrt(hydro.gamma * p / r) / dx).max();
-  hydro.dt_courant(svel, u[0], dx);
+  /*  auto svel = (std::sqrt(hydro.gamma * p / r) / dx).max();*/
+  hydro.first_dt(p, r, u[0], dx);
   double time = 0.0;
-
   auto start_hydro = std::chrono::high_resolution_clock::now();
+
   size_t ncycle = 0;
   for (size_t it = 0; it < NCYC; ++it) {
     time += hydro.dt;
@@ -137,13 +150,14 @@ int main()
 
     dump(ppm::GRID_NX, time, xe, r, p, u[0], e, f);
 
-    sweepx.get_vars(xe, xc, dx, r, p, u[0], u[1], u[2], f);
+    swpx.ppmlr_drv.put_vars(xe, xc, dx, r, p, u[0], u[1], u[2], f);
 
-    sweepx();
+    //    sweepx();
+    swpx.ppmlr_drv();
 
-    sweepx.put_vars(r, p, u[0], u[1], u[2], f);
+    swpx.ppmlr_drv.get_vars(r, p, u[0], u[1], u[2], f);
 
-    hydro.dt_courant(sweepx.max_cdx, u[0], dx);
+    hydro.dt_courant(swpx.ppmlr_drv.max_cdx, u[0], dx);
   }
     auto end_hydro = std::chrono::high_resolution_clock::now();
 

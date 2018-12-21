@@ -8,7 +8,7 @@
 #include "hydro_physics.hpp"
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
-#include "sweep_vector.hpp"
+#include "ppm_vector.hpp"
 
 namespace ppm
 {
@@ -70,20 +70,20 @@ struct ppm_grid_t {
 
   template <index_type I>
   constexpr inline void build_volume() {
-    for (auto i = 0; i < vector_type::i0; ++i) {
+    for (auto i = 0; i < vector_type::iN; ++i) {
       dvol[I][i] = geometer.volume(xe[I][i], dx[I][i]);
     }
   }
 
   constexpr inline void build_amid() {
-    for (auto i = 0; i < vector_type::i0; ++i) {
-      amid[i] = geometer.overlap_area(xe[0][i], xe[1][i]);
+    for (auto i = 0; i < vector_type::iN; ++i) {
+      amid[i] = geometer.area_mid(xe[0][i], xe[1][i]);
     }
   }
 
   constexpr inline void build_overlap() {
-    for (auto i = 0; i < vector_type::i0; ++i) {
-      xnolap[i] = geometer.overlap_volume(xe[0][i], xe[0][i]);
+    for (auto i = 0; i < vector_type::iN; ++i) {
+      xnolap[i] = geometer.overlap_volume(xe[0][i], xe[1][i]);
     }
 
     for (auto i = vector_type::j0; i < vector_type::jM + 1; ++i) {
@@ -92,13 +92,13 @@ struct ppm_grid_t {
   }
 
   inline void store_coords() {
-    for (index_type i = vector_type::i0(); i < vector_type::iN(); ++i) {
+    for (index_type i = vector_type::i0; i < vector_type::iN; ++i) {
       __xe[i] = xe[0][i];
       __xc[i] = xc[0][i];
       __dx[i] = dx[0][i];
       __dvol[i] = dvol[0][i];
     }
-    //  __xe[vector_type::iN()] = xe[0][vector_type::iN()];
+    //  __xe[vector_type::iN] = xe[0][vector_type::iN];
   }
 
   inline void retieve_coords() {
@@ -108,7 +108,7 @@ struct ppm_grid_t {
       dx[0][i] = __dx[i];
       dvol[0][i] = __dvol[i];
     }
-    //    xe[0][vector_type::iN()] = __xe[vector_type::iN()];
+    //    xe[0][vector_type::iN] = __xe[vector_type::iN];
   }
 };
 

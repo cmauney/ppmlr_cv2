@@ -11,21 +11,21 @@
 #include "parabola.hpp"
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
+#include "ppm_grid.hpp"
 #include "ppm_util.hpp"
+#include "ppm_vector.hpp"
 #include "riemann.hpp"
 #include "state.hpp"
-#include "sweep_grid.hpp"
-#include "sweep_vector.hpp"
 
 namespace ppm
 {
 
-template <typename PPMVector, typename GridType, size_t NX>
+template <typename PPMVector, typename GeoType, size_t NX>
 struct ppmlr_t {
   using vector_type = PPMVector;
   using index_type = typename vector_type::index_type;
 
-  using grid_type = GridType;
+  using grid_type = ppm_grid_t<vector_type, GeoType>;
   using bc_type = boundary_conditions_t<vector_type, grid_type>;
   using parabola_type = parabola_t<vector_type>;
   using state_domain_type = state_domain_t<vector_type>;
@@ -64,7 +64,8 @@ struct ppmlr_t {
   // max svel in sweep
   double max_cdx;
 
-  ppmlr_t(hydro_physics_t& _hydro) : hydro(_hydro) {}
+  ppmlr_t(const hydro_physics_t& _hydro)
+      : hydro(_hydro), max_cdx(0.0), states(PRIMATIVE_VARS) {}
 
   ~ppmlr_t() = default;
 
@@ -90,15 +91,15 @@ struct ppmlr_t {
     fluid_v[FLT].assign(f);
 
     build_ekin();
-    for (index_type i = vector_type::j0(); i < vector_type::jM(); ++i)
+    for (index_type i = vector_type::j0; i < vector_type::jM; ++i)
       fluid_v[ENT][i] =
           fluid_v[PRS][i] / (fluid_v[RHO][i] * hydro.gammam1) + ekin[i];
   }
 
   template <typename V>
   inline void get_vars(V& rho, V& prs, V& xvel, V& yvel, V& zvel, V& f) {
-    for (index_type i = vector_type::j0(); i < vector_type::jM(); ++i) {
-      index_type n = i - vector_type::j0();
+    for (index_type i = vector_type::j0; i < vector_type::jM; ++i) {
+      index_type n = i - vector_type::j0;
       rho[n] = fluid_v[RHO][i];
       prs[n] = fluid_v[PRS][i];
       xvel[n] = fluid_v[XVL][i];
@@ -109,7 +110,7 @@ struct ppmlr_t {
   }
 
   inline void build_ekin() {
-    for (index_type i = vector_type::i0(); i < vector_type::iN(); ++i) {
+    for (index_type i = vector_type::i0; i < vector_type::iN; ++i) {
       ekin[i] = fluid_v[XVL][i] * fluid_v[XVL][i] +
                 fluid_v[YVL][i] * fluid_v[YVL][i] +
                 fluid_v[ZVL][i] * fluid_v[ZVL][i];
@@ -119,7 +120,7 @@ struct ppmlr_t {
 
   inline void build_cdx() {
     max_cdx = 0.0;
-    for (index_type i = vector_type::i0() + 2; i < vector_type::iN() - 2; ++i) {
+    for (index_type i = vector_type::i0 + 2; i < vector_type::iN - 2; ++i) {
       cdx[i] = sqrt(hydro.gamma * fluid_v[PRS][i] / fluid_v[RHO][i]) /
                (grid.dx[0][i] * grid.radius);
       max_cdx = std::max(max_cdx, cdx[i]);
@@ -130,7 +131,7 @@ struct ppmlr_t {
     double delp1, delp2, zsten;
     double shock, old_flat;
 
-    for (index_type i = vector_type::j0() - 4; i < vector_type::jM() + 4; ++i) {
+    for (index_type i = vector_type::j0 - 4; i < vector_type::jM + 4; ++i) {
       delp1 = fluid_v[PRS][i + 1] - fluid_v[PRS][i - 1];
       delp2 = fluid_v[PRS][i + 2] - fluid_v[PRS][i - 2];
       if (std::abs(delp2) < small)
@@ -148,16 +149,16 @@ struct ppmlr_t {
     }
 
     z[1] = z[2];
-    z[vector_type::iN() - 2] = z[vector_type::iN() - 3];
+    z[vector_type::iN - 2] = z[vector_type::iN - 3];
 
     flat.fill(0.0);
     //  for (const auto& [i, im2, im1, ip1, ip2] : r1) {
-    for (index_type i = vector_type::j0() - 4; i < vector_type::jM() + 4; ++i) {
+    for (index_type i = vector_type::j0 - 4; i < vector_type::jM + 4; ++i) {
       zsten = std::max(z[i - 1], std::max(z[i], z[i + 1]));
       flat[i] = std::max(0.0, std::min(0.5, zsten));
     }
 
-    for (index_type i = vector_type::j0() - 3; i < vector_type::jM() + 3; ++i) {
+    for (index_type i = vector_type::j0 - 3; i < vector_type::jM + 3; ++i) {
       old_flat = fluid_v[FLT][i] - static_cast<int>(fluid_v[FLT][i]);
       if (flat[i] > 0.0) {
         flat[i] = std::max(flat[i], old_flat);
@@ -170,36 +171,34 @@ struct ppmlr_t {
   }
 
   inline void evolve() {
-    grid.build_volume(0);
-    for (index_type i = vector_type::i0() + 3; i < vector_type::iN() - 2; ++i) {
+    grid.template build_volume<0>();
+
+    for (index_type i = vector_type::i0 + 3; i < vector_type::iN - 2; ++i) {
       dm[i] = fluid_v[RHO][i] * grid.dvol[0][i];
       dtdm[i] = hydro.dt / dm[i];
       grid.xe[1][i] = grid.xe[0][i] + hydro.dt * umid[i] / grid.radius;
       upmid[i] = umid[i] * pmid[i];
     }
 
-    // dump_vec_and_keep_calm(vector_type::i0(), vector_type::iN(), umid,
-    //                       grid.xe[0], grid.xe[1]);
-
-    for (index_type i = 0; i < 3; ++i) {
-      grid.xe[1][vector_type::i0() + 2 - i] =
-          grid.xe[0][vector_type::i0() + 2 - i];
-      grid.xe[1][vector_type::iN() - 2 + i] =
-          grid.xe[0][vector_type::iN() - 2 + i];
+    for (index_type i = 0; i < 2; ++i) {
+      grid.xe[1][vector_type::i0 + 2 - i] = grid.xe[0][vector_type::i0 + 2 - i];
+      grid.xe[1][vector_type::iN - 2 + i] = grid.xe[0][vector_type::iN - 2 + i];
     }
 
-    for (index_type i = vector_type::i0() + 2; i < vector_type::iN() - 1; ++i) {
+    //    for (index_type i = vector_type::i0 + 2; i < vector_type::iN - 1; ++i)
+    //    {
+    for (index_type i = vector_type::i0; i < vector_type::iN - 1; ++i) {
       grid.dx[1][i] = grid.xe[1][i + 1] - grid.xe[1][i];
       grid.xc[1][i] = grid.xe[1][i] + 0.5 * grid.dx[1][i];
     }
 
-    grid.build_volume(1);
+    grid.template build_volume<1>();
     grid.build_amid();
 
-    // dump_vec_and_keep_calm(vector_type::i0(), vector_type::iN(), grid.xe[0],
+    // dump_vec_and_keep_calm(vector_type::i0, vector_type::iN, grid.xe[0],
     //                       grid.xe[1]);
 
-    for (index_type i = vector_type::i0() + 3; i < vector_type::iN() - 3; ++i) {
+    for (index_type i = vector_type::i0 + 3; i < vector_type::iN - 3; ++i) {
       fluid_v[RHO][i] *= (grid.dvol[0][i] / grid.dvol[1][i]);
 
       uold[i] = fluid_v[XVL][i];
@@ -225,7 +224,7 @@ struct ppmlr_t {
 
     parabolas.build(fluid_v, flat, CONSERVATIVE_VARS);
 
-    /*    for (auto i = vector_type::j0(); i < vector_type::jM() + 1; ++i) {
+    /*    for (auto i = vector_type::j0; i < vector_type::jM + 1; ++i) {
           std::cout << i << " " << i + 1 << " " << fluid_v[RHO][i] << " "
                     << parabolas[RHO].da[i] << " " << parabolas[RHO].a6[i] << "
        "
@@ -239,7 +238,7 @@ struct ppmlr_t {
     for (index_type f = 0; f < N_FLUIDV; ++f)
       fluxes[f].fill(0.0);
 
-    for (index_type i = vector_type::j0(); i < vector_type::jM() + 1; ++i) {
+    for (index_type i = vector_type::j0; i < vector_type::jM + 1; ++i) {
       if (grid.xndiff[i] >= 0.0) {
         fn1 = 0.5 * grid.xndiff[i] / grid.dx[1][i - 1];
         fn2 = 1.0 - fourthird * fn1;
@@ -263,7 +262,7 @@ struct ppmlr_t {
       }
     }
 
-    /*    for (auto i = vector_type::j0(); i < vector_type::jM() + 1; ++i) {
+    /*    for (auto i = vector_type::j0; i < vector_type::jM + 1; ++i) {
           fn1 = 0.5 * grid.xndiff[i] / grid.dx[1][i - 1];
           fn2 = 1.0 - fourthird * fn1;
 
@@ -277,10 +276,10 @@ struct ppmlr_t {
         }
         std::exit(1);
     */
-    /*dump_vec_and_keep_calm(vector_type::j0(), vector_type::jM() + 1,
-                           fluxes[RHO]);
-*/
-    for (index_type i = vector_type::j0() - 1; i < vector_type::jM() + 1; ++i) {
+    //    dump_vec_and_keep_calm(vector_type::j0, vector_type::jM + 1,
+    //    fluxes[RHO]);
+
+    for (index_type i = vector_type::j0 - 1; i < vector_type::jM + 1; ++i) {
       dm[i] = fluid_v[RHO][i] * grid.dvol[1][i];
       dm0[i] = (dm[i] + fluxes[RHO][i] - fluxes[RHO][i + 1]);
 
@@ -297,7 +296,7 @@ struct ppmlr_t {
 
     // supersonic flow
     build_ekin();
-    for (index_type i = vector_type::j0(); i < vector_type::jM(); ++i) {
+    for (index_type i = vector_type::j0; i < vector_type::jM; ++i) {
       if (ekin[i] / fluid_v[EIN][i] < 100.0)
         fluid_v[EIN][i] = fluid_v[ENT][i] - ekin[i];
       fluid_v[PRS][i] = hydro.gammam1 * fluid_v[RHO][i] * fluid_v[EIN][i];
@@ -312,14 +311,14 @@ struct ppmlr_t {
       grid.store_coords();
 
       //      for (size_t i = NZ_GHOST + 1; i < nx + NZ_GHOST; ++i) {
-      for (index_type i = vector_type::j0() + 1; i < vector_type::jM(); ++i) {
+      for (index_type i = vector_type::j0 + 1; i < vector_type::jM; ++i) {
         if (std::max(flat[i - 1], flat[i]) > 0.0) {
           grid.xe[0][i] += xwig * grid.dx[0][i];
           grid.dx[0][i - 1] = grid.xe[0][i] - grid.xe[0][i - 1];
         }
       }
 
-      grid.build_volume(0);
+      grid.template build_volume<0>();
       remap();
 
       grid.retieve_coords();
@@ -339,7 +338,7 @@ struct ppmlr_t {
 
     states.prepare(hydro, cdx);
 
-    states.build(parabolas);
+    states.build(parabolas.arr());
 
     riemann_solve(hydro, states, pmid, umid);
 

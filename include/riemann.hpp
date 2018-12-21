@@ -11,8 +11,8 @@
 #include "hydro_physics.hpp"
 #include "ppm_constant.hpp"
 #include "ppm_util.hpp"
+#include "ppm_vector.hpp"
 #include "state.hpp"
-#include "sweep_vector.hpp"
 
 namespace ppm
 {
