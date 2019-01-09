@@ -1,10 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <cstddef>
-
-namespace ppm
-{
 
 // numerical constants
 constexpr double pi = M_PIf64;       // pi = 4 atan(1.0)
@@ -31,9 +27,3 @@ constexpr double onethird = 1. / 3;
 constexpr double twothird = 2 * onethird;
 constexpr double fourthird = 4 * onethird;
 
-constexpr double small = 1.0E-15;
-constexpr double smallp = 1.0E-12;
-constexpr double smallr = 1.0E-12;
-constexpr double small_riemann = 1.0E-25;
-
-} //namespace ppm

@@ -21,22 +21,46 @@ OBJECTS = $(SOURCES:$(SRC_PATH)/%.$(SRC_EXT)=$(BUILD_PATH)/%.o)
 # Set the dependency files that will be used to add header dependencies
 DEPS = $(OBJECTS:.o=.d)
 
-# flags #
-STD_FLAGS = -std=c++17 -fdiagnostics-color
-DBG_FLAGS = -g3 -Wall -Wextra -Og -ggdb
-OPT_FLAGS = -g -O2 -march=native
-XPT_FLAGS = -g -O3 -march=native
+# compile variables #
+LOOP_PAR_THREADS = 1
+# flags common #
+FLTO_FLAGS 		= #-flto -fuse-linker-plugin
+OPENMP_FLAGS 	= #-fopenmp
+ILS_FLAGS 		= -ftree-vectorize -floop-interchange -floop-strip-mine \
+								-floop-block -ftree-loop-distribution \
+								-ftree-loop-distribute-patterns
+STD_FLAGS 		= -g -std=c++17 -fdiagnostics-color $(FLTO_FLAGS) $(OPENMP_FLAGS)
+
+# debug flags #
+DBG_FLAGS = -g3 -Wall -Wextra -Og -ggdb -fmax-errors=5 -fno-omit-frame-pointer -fno-inline
+# opt flags #
+OPT_FLAGS = -O2 -march=native
+#XPT_FLAGS = -O3 -march=native
+XPT_FLAGS = -Ofast -march=native $(ILS_FLAGS)
 #XPT_FLAGS = -g -Ofast -ffast-math -march=native
-COMPILE_FLAGS = $(STD_FLAGS) $(DBG_FLAGS)
-INCLUDES = -I include/ -I /usr/include 
-# Space-separated pkg-config libraries used by this project
-LIBS =  
+
+COMPILE_FLAGS_FIX = $(STD_FLAGS) $(DBG_FLAGS)
+COMPILE_FLAGS_FAST = $(STD_FLAGS) $(OPT_FLAGS)
+
+INCLUDES = -I./include/ -I/usr/include -I/$(HOME)/.local/include
+
+# linker
+LINK = $(CXX)
+# linker flags
+LD_FLAGS = $(COMPILE_FLAGS)
+# Space-separated libraries
+LIBS = -lm 
 
 .PHONY: default_target
-default_target: release
+default_target: debug
+
+.PHONY: debug
+debug: export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS_FIX)
+debug: dirs
+	@$(MAKE) all
 
 .PHONY: release
-release: export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS)
+release: export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS_FAST)
 release: dirs
 	@$(MAKE) all
 
@@ -64,7 +88,7 @@ all: $(BIN_PATH)/$(BIN_NAME)
 # Creation of the executable
 $(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
 	@echo "Linking: $@"
-	$(CXX) $(OBJECTS) -o $@
+	$(LINK) $(OBJECTS) -o $@ $(LD_FLAGS) $(LIBS)
 
 # Add dependency files, if they exist
 -include $(DEPS)

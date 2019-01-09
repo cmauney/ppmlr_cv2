@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/mauneyc/scratch/hydro/ppmlr_cpp_valarr/build",
-  "command": "/usr/lib64/ccache/c++   -I/home/mauneyc/scratch/hydro/ppmlr_cpp_valarr/include -I/.local/include  -g   -g3 -Wall -Wextra -std=gnu++17 -o CMakeFiles/ppm1d.dir/src/main.cpp.o -c /home/mauneyc/scratch/hydro/ppmlr_cpp/src/main.cpp",
-  "file": "/home/mauneyc/scratch/hydro/ppmlr_cpp_valarr/src/main.cpp"
-}
-]

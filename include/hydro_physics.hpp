@@ -4,52 +4,69 @@
 #include <iostream>
 #include <valarray>
 
-#include "ppm_constant.hpp"
-#include "ppm_def.hpp"
+#include "global_const.hpp"
+#include "ppmlr/ppm_constant.hpp"
+#include "vector_wrapper.hpp"
 
-namespace ppm
-{
+namespace hydro {
 
-    struct hydro_physics_t
-    {
-      const double gamma, gammam1;
-      double last_dt, dt, hdt;
+constexpr double courant = 0.5;
 
-      double svel;
+struct hydro_physics_t {
+  const double gamma, gammam1;
+  double last_dt, dt, hdt;
 
-      hydro_physics_t(double gam)
-          : gamma(gam), gammam1(gam - 1), last_dt(small), svel(zero) {}
+  double svel;
 
-      template <typename V>
-      constexpr inline double ridt(const double svel,
-                                   const V& xvel,
-                                   const V& dx) {
-        return std::max(svel, (std::abs(xvel) / dx).max());
-      }
+  hydro_physics_t(double gam)
+      : gamma(gam), gammam1(gam - 1), last_dt(ppm::small), svel(zero) {}
 
-      constexpr inline void set_dt(double timestep) {
-        last_dt = dt;
+  template <index_type N>
+  constexpr inline double ridt(const double svel,
+                               const vector_wrapper_t<N>& xvel,
+                               const vector_wrapper_t<N>& dx) {
+    vector_wrapper_t<N> vm, vabs;
 
-        dt = timestep;
-        hdt = 0.5 * dt;
-      }
+    vabs = xvel.abs();
+    for (index_type i = 0; i < N; ++i) {
+      vm[i] = vabs[i] / dx[i];
+    }
 
-      template <typename V>
-      constexpr inline void first_dt(const V& prs,
-                                     const V& rho,
-                                     const V& xvel,
-                                     const V& dx) {
-        auto svel = (std::sqrt(gamma * prs / rho) / dx).max();
-        set_dt(courant / ridt(svel, xvel, dx));
-      }
+    return std::max(svel, (vm.max()));
+  }
 
-      template <typename V>
-      constexpr inline void dt_courant(double cdx, const V& xvel, const V& dx) {
-        auto dt_n = courant / ridt(cdx, xvel, dx);
+  constexpr inline void set_dt(double timestep) {
+    last_dt = dt;
 
-        auto dtu = last_dt * 1.1;
-        set_dt(std::min(dtu, dt_n));
-      }
-    };
+    dt = timestep;
+    hdt = half * dt;
+  }
 
-} // namespace ppm
+  template <index_type N>
+  constexpr inline void first_dt(const vector_wrapper_t<N>& prs,
+                                 const vector_wrapper_t<N>& rho,
+                                 const vector_wrapper_t<N>& xvel,
+                                 const vector_wrapper_t<N>& dx) {
+    vector_wrapper_t<N> ctdx;
+    for (index_type i = 0; i < N; ++i)
+      ctdx[i] = std::sqrt(gamma * prs[i] / rho[i]) / dx[i];
+
+    auto svel = ctdx.max();
+
+    dt = courant / ridt(svel, xvel, dx);
+    hdt = half * dt;
+    last_dt = dt;
+  }
+
+  template <index_type N>
+  constexpr inline void dt_courant(double cdx,
+                                   const vector_wrapper_t<N>& xvel,
+                                   const vector_wrapper_t<N>& dx) {
+    auto dt_n = courant / ridt(cdx, xvel, dx);
+
+    auto dtu = last_dt * 1.1;
+    set_dt(std::min(dtu, dt_n));
+  }
+};
+
+}  // namespace hydro

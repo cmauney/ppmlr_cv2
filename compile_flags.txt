@@ -1,0 +1,9 @@
+-I/home/mauneyc/scratch/hydro/ppmlr_cv2/include
+-I/home/mauneyc/scratch/hydro/ppmlr_cv2/include/ppmlr
+-I/usr/include
+-I/usr/local/include
+-I/home/mauneyc/.local/include
+-std=c++17
+-Wall
+-Wextra
+-Wpedantic

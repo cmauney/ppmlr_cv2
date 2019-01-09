@@ -9,28 +9,29 @@
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
 #include "ppm_grid.hpp"
-#include "ppm_util.hpp"
 #include "ppm_vector.hpp"
 
 namespace ppm
 {
-template <typename PPMVector>
-struct parabola_basis_t {
-  using vector_type = PPMVector;
-  using index_type = typename vector_type::index_type;
-  using basis_type = std::array<double, vector_type::iN * 5>;
+template <index_type N>
+struct parabola_basis_t : ppmlr_base_t<N> {
+  using base = ppmlr_base_t<N>;
+  using bp = typename base::bp;
+  using vector_type = typename base::vector_type;
+
+  using basis_type = fixed_storage_type<bp::iN * 5>;
 
   // internal variables
   vector_type a, b, c, d, ai, bi, ci;
 
-  // basis
-  std::array<double, vector_type::iN * 5> basis;
+  // basis:
+  std::array<double, bp::iN * 5> basis;
 
   // spans/views
   parabola_basis_t() = default;
   ~parabola_basis_t() = default;
 
-  inline void clear() {
+  constexpr inline void clear() {
     a.clear();
     b.clear();
     c.clear();
@@ -41,8 +42,8 @@ struct parabola_basis_t {
     basis.clear();
   }
 
-  inline void prepare(const vector_type& dx) {
-    for (index_type i = vector_type::i0; i < vector_type::iN - 1; ++i) {
+  constexpr inline void prepare(const vector_type& dx) {
+    for (index_type i = bp::i0; i < bp::iN - 1; ++i) {
       a[i] = dx[i] + dx[i + 1];
       b[i] = a[i] + dx[i];
       c[i] = a[i] + dx[i + 1];
@@ -51,7 +52,7 @@ struct parabola_basis_t {
       ci[i] = 1. / c[i];
     }
 
-    for (index_type i = vector_type::i0 + 1; i < vector_type::iN - 2; ++i) {
+    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
       size_t b_row = i * 5;
       d[i] = 1. / (a[i - 1] + a[i + 1]);
       basis[b_row + 0] =
@@ -69,11 +70,13 @@ struct parabola_basis_t {
     }
   }
 };
-template <typename PPMVector>
-struct parabola_t {
-  using vector_type = PPMVector;
-  using index_type = typename vector_type::index_type;
-  using basis_type = typename parabola_basis_t<vector_type>::basis_type;
+template <index_type N>
+struct parabola_t : ppmlr_base_t<N> {
+  using base = ppmlr_base_t<N>;
+  using bp = typename base::bp;
+  using vector_type = typename base::vector_type;
+
+  using basis_type = typename parabola_basis_t<N>::basis_type;
 
   // parabola coeffs
   vector_type da, a6, al, ar;
@@ -85,7 +88,7 @@ struct parabola_t {
   parabola_t() = default;
   ~parabola_t() = default;
 
-  inline void clear() {
+  constexpr inline void clear() {
     diff_an.clear();
     del_a.clear();
 
@@ -99,16 +102,16 @@ struct parabola_t {
     ar.clear();
   }
 
-  inline void construct(const vector_type& a,
-                        const vector_type& flat,
-                        const basis_type& pbase) {
+  constexpr inline void construct(const vector_type& a,
+                                  const vector_type& flat,
+                                  const basis_type& pbase) {
     clear();
 
-    for (index_type i = vector_type::i0; i < vector_type::iN - 1; ++i) {
+    for (index_type i = bp::i0; i < bp::iN - 1; ++i) {
       diff_an[i] = a[i + 1] - a[i];
     }
 
-    for (index_type i = vector_type::i0 + 1; i < vector_type::iN - 2; ++i) {
+    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
       size_t b_row = i * 5;
       del_a[i] =
           pbase[b_row + 3] * diff_an[i] + pbase[b_row + 4] * diff_an[i - 1];
@@ -122,20 +125,20 @@ struct parabola_t {
         del_a[i] = 0.0;
     }
 
-    for (index_type i = vector_type::i0 + 1; i < vector_type::iN - 2; ++i) {
+    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
       size_t b_row = i * 5;
       ar[i] = a[i] + pbase[b_row + 0] * diff_an[i] +
               pbase[b_row + 1] * del_a[i + 1] + pbase[b_row + 2] * del_a[i];
       al[i + 1] = ar[i];
     }
 
-    for (index_type i = vector_type::i0 + 2; i < vector_type::iN - 2; ++i) {
+    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
       double onemfl = 1.0 - flat[i];
       ar[i] = flat[i] * a[i] + onemfl * ar[i];
       al[i] = flat[i] * a[i] + onemfl * al[i];
     }
 
-    for (index_type i = vector_type::i0 + 2; i < vector_type::iN - 2; ++i) {
+    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
       da[i] = ar[i] - al[i];
       a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
 
@@ -143,7 +146,7 @@ struct parabola_t {
       tmp2[i] = da[i] * da[i];
       tmp3[i] = da[i] * a6[i];
     }
-    for (index_type i = vector_type::i0 + 2; i < vector_type::iN - 2; ++i) {
+    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
       if (tmp1[i] <= zero) {
         ar[i] = a[i];
         al[i] = a[i];
@@ -154,51 +157,53 @@ struct parabola_t {
         ar[i] = three * a[i] - two * al[i];
     }
 
-    for (index_type i = vector_type::i0 + 2; i < vector_type::iN - 2; ++i) {
+    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
       da[i] = ar[i] - al[i];
       a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
     }
   }
 
-  inline double rc_left(const size_t i,
-                        const double f1,
-                        const double f2) const {
+  constexpr inline double rc_left(const size_t i,
+                                  const double f1,
+                                  const double f2) const {
     return ar[i] - f1 * (da[i] - f2 * a6[i]);
   }
 
-  inline double rc_right(const size_t i,
-                         const double f1,
-                         const double f2) const {
+  constexpr inline double rc_right(const size_t i,
+                                   const double f1,
+                                   const double f2) const {
     return al[i] + f1 * (da[i] + f2 * a6[i]);
   }
 };
-template <typename ParabolaType>
-struct parabola_set_t {
-  using vector_type = typename ParabolaType::vector_type;
-  using index_type = typename vector_type::index_type;
 
-  using parabola = ParabolaType;
-  using parabola_basis = parabola_basis_t<vector_type>;
-  using parabola_array = FluidVars<parabola>;
+template <typename ParabolaType, index_type N>
+struct parabola_set_t : ppmlr_base_t<N> {
+  using base = ppmlr_base_t<N>;
+  using bp = typename base::bp;
+  using vector_type = typename base::vector_type;
 
-  parabola_basis base;
+  using parabola_type = ParabolaType;
+  using parabola_basis = parabola_basis_t<N>;
+  using parabola_array = FluidVars<parabola_type>;
+
+  parabola_basis basis;
   parabola_array parabolas;
 
   parabola_set_t() = default;
   ~parabola_set_t() = default;
 
-  inline void prepare(const vector_type& dx) { base.prepare(dx); }
+  inline void prepare(const vector_type& dx) { basis.prepare(dx); }
 
   template <size_t FN>
   constexpr inline void build(const FluidVars<vector_type>& fluid_v,
                               const vector_type& flat,
                               const std::array<FLUID_VI, FN>& fidx) {
     for (FLUID_VI fi : fidx) {
-      parabolas[fi].construct(fluid_v[fi], flat, base.basis);
+      parabolas[fi].construct(fluid_v[fi], flat, basis.basis);
     }
   }
 
-  constexpr inline const parabola& operator[](const index_type idx) const {
+  constexpr inline const parabola_type& operator[](const index_type idx) const {
     return parabolas[idx];
   }
 
