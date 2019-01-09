@@ -19,13 +19,15 @@ struct parabola_basis_t : ppmlr_base_t<N> {
   using bp = typename base::bp;
   using vector_type = typename base::vector_type;
 
-  using basis_type = fixed_storage_type<bp::iN * 5>;
+  // using basis_type = fixed_storage_type<bp::iN * 5>;
+  using basis_type = vector_wrapper_t<bp::iN * 5>;
 
   // internal variables
   vector_type a, b, c, d, ai, bi, ci;
 
   // basis:
-  std::array<double, bp::iN * 5> basis;
+  //  std::array<double, bp::iN * 5> basis;
+  basis_type basis;
 
   // spans/views
   parabola_basis_t() = default;
@@ -105,7 +107,7 @@ struct parabola_t : ppmlr_base_t<N> {
   constexpr inline void construct(const vector_type& a,
                                   const vector_type& flat,
                                   const basis_type& pbase) {
-    clear();
+    // clear();
 
     for (index_type i = bp::i0; i < bp::iN - 1; ++i) {
       diff_an[i] = a[i + 1] - a[i];
