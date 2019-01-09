@@ -85,6 +85,7 @@ struct parabola_t : ppmlr_base_t<N> {
 
   // internals
   vector_type diff_an, del_a;
+  vector_type two_diff_an_abs, two_diff_an_min;
   vector_type tmp1, tmp2, tmp3;
 
   parabola_t() = default;
@@ -111,16 +112,25 @@ struct parabola_t : ppmlr_base_t<N> {
 
     for (index_type i = bp::i0; i < bp::iN - 1; ++i) {
       diff_an[i] = a[i + 1] - a[i];
+      two_diff_an_abs[i] = 2.0 * std::abs(diff_an[i]);
     }
 
     for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
-      size_t b_row = i * 5;
+      two_diff_an_min[i] = std::min(two_diff_an_abs[i - 1], two_diff_an_abs[i]);
+    }
+
+    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
+      index_type b_row = i * 5;
       del_a[i] =
           pbase[b_row + 3] * diff_an[i] + pbase[b_row + 4] * diff_an[i - 1];
 
       del_a[i] = std::copysign(
-          std::min(std::abs(del_a[i]), std::min(2.0 * std::abs(diff_an[i - 1]),
-                                                2.0 * std::abs(diff_an[i]))),
+          //          std::min(std::abs(del_a[i]), std::min(2.0 *
+          //          std::abs(diff_an[i - 1]),
+          //                                                2.0 *
+          //                                                std::abs(diff_an[i]))),
+          std::min(std::abs(del_a[i]), two_diff_an_min[i]),
+
           del_a[i]);
 
       if (diff_an[i - 1] * diff_an[i] < 0.0)
@@ -128,7 +138,7 @@ struct parabola_t : ppmlr_base_t<N> {
     }
 
     for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
-      size_t b_row = i * 5;
+      index_type b_row = i * 5;
       ar[i] = a[i] + pbase[b_row + 0] * diff_an[i] +
               pbase[b_row + 1] * del_a[i + 1] + pbase[b_row + 2] * del_a[i];
       al[i + 1] = ar[i];
@@ -148,21 +158,34 @@ struct parabola_t : ppmlr_base_t<N> {
       tmp2[i] = da[i] * da[i];
       tmp3[i] = da[i] * a6[i];
     }
+
     for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
+      bool redo = false;
       if (tmp1[i] <= zero) {
         ar[i] = a[i];
         al[i] = a[i];
+        redo = true;
       }
-      if (tmp2[i] < +tmp3[i])
+      if (tmp2[i] < +tmp3[i]) {
         al[i] = three * a[i] - two * ar[i];
-      if (tmp2[i] < -tmp3[i])
+        redo = true;
+      }
+      if (tmp2[i] < -tmp3[i]) {
         ar[i] = three * a[i] - two * al[i];
+        redo = true;
+      }
+      if (redo) {
+        da[i] = ar[i] - al[i];
+        a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
+      }
     }
 
-    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
-      da[i] = ar[i] - al[i];
-      a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
-    }
+    /*
+       for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
+          da[i] = ar[i] - al[i];
+          a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
+        }
+    */
   }
 
   constexpr inline double rc_left(const size_t i,

@@ -8,35 +8,10 @@
 #include <valarray>
 #include <vector>
 
+#include "eigen3/Eigen/Dense"
+
 #include "global_def.hpp"
-
-template <typename V, class Enable = void>
-constexpr inline auto vsum(const V& v) {
-  double sum = 0.0;
-  for (index_type i = 0; i < v.size(); ++i) {
-    sum += v[i];
-  }
-  return sum;
-}
-
-template <typename V, class Enable = void>
-constexpr inline auto vmax(const V& v) {
-  double maxv = std::numeric_limits<double>::lowest();
-  for (index_type i = 0; i < v.size(); ++i) {
-    maxv = std::max(maxv, v[i]);
-  }
-  return maxv;
-}
-
-template <typename V, typename std::enable_if_t<has_sum<V>>>
-constexpr inline auto vsum(const V& v) {
-  return v.sum();
-}
-
-template <typename V, typename std::enable_if_t<has_max<V>>>
-constexpr inline auto vmax(const V& v) {
-  return v.max();
-}
+#include "vector_adapt.hpp"
 
 template <index_type N, index_type B>
 struct vector_frame_t {
@@ -47,22 +22,25 @@ struct vector_frame_t {
 };
 
 template <index_type N, index_type B = 0>
-struct __attribute__((aligned(32))) vector_wrapper_t {
+// struct __attribute__((aligned(32))) vector_wrapper_t {
+struct vector_wrapper_t {
   using vf = vector_frame_t<N, B>;
 
+  // using vtype = double[vf::iN];
   //  using vtype = std::array<double, vf::iN>;
   using vtype = std::valarray<double>;
-  //  using vtype = std::vector<double>;
+  // using vtype = std::vector<double>;
+  // using vtype = Eigen::Array<double, vf::iN, 1>;
 
   //  fixed_storage_type<vf::iN> storage_;
   //  std::array<double, vf::iN> storage_;
   // std::vector<double> storage_;
-  // std::valarray<double> storage_;
+
   vtype storage_;
 
   vector_wrapper_t() {
     //    storage_.resize(vf::iN);
-    if constexpr (has_resize<vtype>)
+    if constexpr (vec_adt::has_resize<vtype>)
       storage_.resize(vf::iN);
 
     clear();
@@ -94,17 +72,16 @@ struct __attribute__((aligned(32))) vector_wrapper_t {
       storage_[i] = v[i - vf::j0];
   }
 
-  constexpr inline double sum() const { return vsum(storage_); }
+  constexpr inline double sum() const {
+    return vec_adt::vsum(storage_, vf::i0, vf::iN);
+  }
 
-  constexpr inline double max() const { return vmax(storage_); }
+  constexpr inline double max() const {
+    return vec_adt::vmax(storage_, vf::i0, vf::iN);
+  }
 
   constexpr inline auto abs() const {
-    // return vector_wrapper_t<N>(std::abs(storage_));
-    vector_wrapper_t<N, B> rv;
-    for (index_type i = vf::i0; i < vf::iN; ++i) {
-      rv[i] = std::abs(storage_[i]);
-        }
-        return rv;
+    return vec_adt::vabs(storage_, vf::i0, vf::iN);
   }
 };
 
