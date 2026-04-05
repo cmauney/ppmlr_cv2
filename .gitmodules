@@ -1,0 +1,9 @@
+[submodule "external/fmt"]
+	path = extern/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "external/taskflow"]
+	path = external/taskflow
+	url = https://github.com/taskflow/taskflow.git
+[submodule "external/mdspan"]
+	path = external/mdspan
+	url = https://github.com/kokkos/mdspan.git
