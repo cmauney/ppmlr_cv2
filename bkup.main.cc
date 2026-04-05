@@ -1,19 +1,18 @@
+#include <fmt/core.h>
 #include <chrono>
 #include <cmath>
-#include <fstream>
-#include <iostream>
 #include <tuple>
-#include <valarray>
+#include <vector>
 
-#include "hydro_physics.hpp"
-#include "ppmlr/ppm_grid.hpp"
-#include "ppmlr/ppm_vector.hpp"
-#include "ppmlr/ppmlr.hpp"
-#include "run_def.hpp"
-#include "vector_wrapper.hpp"
+#include "ppmlr/hydro_physics.hh"
+#include "ppmlr/ppmlr.hh"
+#include "ppmlr/ppmlr/ppm_grid.hh"
+#include "ppmlr/ppmlr/ppm_vector.hh"
+#include "ppmlr/run_def.hh"
+#include "ppmlr/vector_wrapper.hh"
 
-//#define _GNU_SOURCE
-//#include <fenv.h>
+// #define _GNU_SOURCE
+// #include <fenv.h>
 
 constexpr size_t NCYC = 1500;
 
@@ -24,8 +23,7 @@ constexpr double dl = 1.0;
 
 constexpr double my_gamma = 1.4;
 
-template <index_type N>
-using VecType = vector_wrapper_t<N>;
+using VecType = std::vector<double>;
 
 template <typename V>
 constexpr inline auto etot(size_t n,
@@ -135,8 +133,7 @@ struct sweep_x {
 
   sweep_x(const hydro::hydro_physics_t& h) : ppmlr_drv(h) {}
 };
-int main()
-{
+int main() {
   //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   hydro::hydro_physics_t hydro(my_gamma);
@@ -183,15 +180,14 @@ int main()
     rt_s += (end_hydro - start_hydro);
   }
 
-    std::cout << time << std::endl;
+  std::cout << time << std::endl;
 
-    //    std::cout << "ttf = " << hydro_duration.count() << " us\n";
-    std::cout << "ttf = " << rt_s.count() * 1.0E-6 << " us\n";
+  //    std::cout << "ttf = " << hydro_duration.count() << " us\n";
+  std::cout << "ttf = " << rt_s.count() * 1.0E-6 << " us\n";
 
-    /* for (size_t i = 0; i < NX; ++i) */
-    /*   std::cout << i << " : " << swp.fluid_v[ppm::RHO][i + ppm::NZ_GHOST] */
-    /*             << std::endl; */
+  /* for (size_t i = 0; i < NX; ++i) */
+  /*   std::cout << i << " : " << swp.fluid_v[ppm::RHO][i + ppm::NZ_GHOST] */
+  /*             << std::endl; */
 
-    return 0;
+  return 0;
 }
-

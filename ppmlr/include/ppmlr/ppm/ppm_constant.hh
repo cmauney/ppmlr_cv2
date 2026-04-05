@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstddef>
 
-#include "global_const.hpp"
+#include "global_const.hh"
 
 namespace ppm
 {

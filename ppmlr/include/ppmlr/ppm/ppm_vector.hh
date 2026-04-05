@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "ppm_def.hpp"
+#include "ppm_def.hh"
 
 namespace ppm {
 /*

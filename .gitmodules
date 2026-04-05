@@ -1,5 +1,5 @@
 [submodule "external/fmt"]
-	path = extern/fmt
+	path = external/fmt
 	url = https://github.com/fmtlib/fmt.git
 [submodule "external/taskflow"]
 	path = external/taskflow

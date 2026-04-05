@@ -5,11 +5,11 @@
 #include <iostream>
 #include <utility>
 
-#include "hydro_physics.hpp"
-#include "parabola.hpp"
-#include "ppm_constant.hpp"
-#include "ppm_def.hpp"
-#include "ppm_grid.hpp"
+#include "hydro_physics.hh"
+#include "parabola.hh"
+#include "ppm_constant.hh"
+#include "ppm_def.hh"
+#include "ppm_grid.hh"
 
 namespace ppm
 {

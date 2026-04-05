@@ -4,9 +4,9 @@
 #include <utility>
 #include <valarray>
 
-#include "global_def.hpp"
-#include "ppmlr/ppm_constant.hpp"
-#include "vector_wrapper.hpp"
+#include "global_def.hh"
+#include "ppm/ppm_constant.hh"
+#include "vector_wrapper.hh"
 
 namespace ppm
 {

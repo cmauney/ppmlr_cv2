@@ -1,6 +1,6 @@
 #pragma once
 
-#include "global_const.hpp"
+#include "global_const.hh"
 
 namespace geo {
 // geometry IDs

@@ -4,9 +4,9 @@
 #include <iostream>
 #include <valarray>
 
-#include "global_const.hpp"
-#include "ppmlr/ppm_constant.hpp"
-#include "vector_wrapper.hpp"
+#include "global_const.hh"
+#include "ppm/ppm_constant.hh"
+#include "vector_wrapper.hh"
 
 namespace hydro {
 

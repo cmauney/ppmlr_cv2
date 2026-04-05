@@ -6,15 +6,15 @@
 #include <tuple>
 #include <utility>
 
-#include "boundary_conditions.hpp"
-#include "hydro_physics.hpp"
-#include "parabola.hpp"
-#include "ppm_constant.hpp"
-#include "ppm_def.hpp"
-#include "ppm_grid.hpp"
-#include "ppm_vector.hpp"
-#include "riemann_solve.hpp"
-#include "state.hpp"
+#include "boundary_conditions.hh"
+#include "hydro_physics.hh"
+#include "parabola.hh"
+#include "ppm_constant.hh"
+#include "ppm_def.hh"
+#include "ppm_grid.hh"
+#include "ppm_vector.hh"
+#include "riemann_solve.hh"
+#include "state.hh"
 
 namespace ppm
 {

@@ -5,10 +5,10 @@
 #include <iostream>
 #include <utility>
 
-#include "hydro_physics.hpp"
-#include "ppm_constant.hpp"
-#include "ppm_vector.hpp"
-#include "state.hpp"
+#include "hydro_physics.hh"
+#include "ppm_constant.hh"
+#include "ppm_vector.hh"
+#include "state.hh"
 
 namespace ppm
 {

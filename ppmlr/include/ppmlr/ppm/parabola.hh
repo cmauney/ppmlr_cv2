@@ -6,10 +6,10 @@
 #include <tuple>
 #include <utility>
 
-#include "ppm_constant.hpp"
-#include "ppm_def.hpp"
-#include "ppm_grid.hpp"
-#include "ppm_vector.hpp"
+#include "ppm_constant.hh"
+#include "ppm_def.hh"
+#include "ppm_grid.hh"
+#include "ppm_vector.hh"
 
 namespace ppm
 {

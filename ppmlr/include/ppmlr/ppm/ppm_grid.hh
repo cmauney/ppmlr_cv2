@@ -3,11 +3,11 @@
 #include <cstddef>
 #include <iostream>
 
-//#include "hydro_physics.hpp"
-#include "geometry.hpp"
-#include "ppm_constant.hpp"
-#include "ppm_def.hpp"
-#include "ppm_vector.hpp"
+//#include "hydro_physics.hh"
+#include "geometry.hh"
+#include "ppm_constant.hh"
+#include "ppm_def.hh"
+#include "ppm_vector.hh"
 
 namespace ppm
 {
