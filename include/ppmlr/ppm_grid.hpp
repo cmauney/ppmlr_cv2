@@ -35,7 +35,16 @@ struct ppm_grid_t : ppmlr_base_t<N> {
   geo_type geometer;
   double radius;
 
-  ppm_grid_t() : radius(1.0) {}
+  ppm_grid_t() : radius(1.0),
+                 __xe(base::make_vector()), __xc(base::make_vector()),
+                 __dx(base::make_vector()), __dvol(base::make_vector()),
+                 amid(base::make_vector()), xnolap(base::make_vector()),
+                 xndiff(base::make_vector()) {
+    for (auto& v : xe) v = base::make_vector();
+    for (auto& v : xc) v = base::make_vector();
+    for (auto& v : dx) v = base::make_vector();
+    for (auto& v : dvol) v = base::make_vector();
+  }
 
   template <index_type I>
   constexpr inline void build_volume() {

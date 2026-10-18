@@ -31,7 +31,13 @@ namespace ppm
       vector_type wl, wr, zl, zr;
       vector_type umidl, umidr, pmold;
 
-      riemann_t() = default;
+      riemann_t() : cl(base::make_vector()), cr(base::make_vector()),
+                    pli(base::make_vector()), pri(base::make_vector()),
+                    rli(base::make_vector()), rri(base::make_vector()),
+                    wl(base::make_vector()), wr(base::make_vector()),
+                    zl(base::make_vector()), zr(base::make_vector()),
+                    umidl(base::make_vector()), umidr(base::make_vector()),
+                    pmold(base::make_vector()) {}
 
       inline void operator()(const hydro::hydro_physics_t& hydro,
                              const state_set& states,

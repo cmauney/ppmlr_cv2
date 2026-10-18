@@ -1,16 +1,16 @@
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <tuple>
-#include <valarray>
+#include <vector>
 
 #include "hydro_physics.hpp"
 #include "ppmlr/ppm_grid.hpp"
 #include "ppmlr/ppm_vector.hpp"
 #include "ppmlr/ppmlr.hpp"
 #include "run_def.hpp"
-#include "vector_wrapper.hpp"
 
 //#define _GNU_SOURCE
 //#include <fenv.h>
@@ -23,9 +23,6 @@ constexpr double pl = 1.0;
 constexpr double dl = 1.0;
 
 constexpr double my_gamma = 1.4;
-
-template <index_type N>
-using VecType = vector_wrapper_t<N>;
 
 template <typename V>
 constexpr inline auto etot(size_t n,
@@ -43,25 +40,29 @@ constexpr inline auto etot(size_t n,
 }
 
 auto gridder(double xmin, double xmax) {
-  VecType<hydro::NX> xe;
-  VecType<hydro::NX> xc, dx;
+  std::vector<double> xe(hydro::NX);
+  std::vector<double> xc(hydro::NX), dx(hydro::NX);
 
   auto ddx = (xmax - xmin) / static_cast<double>(hydro::NX);
 
+  // Modern C++20: cleaner loop
   for (size_t i = 0; i < hydro::NX; ++i) {
     dx[i] = ddx;
-    xe[i] = xmin + static_cast<double>(i) * dx[i];
-    xc[i] = xe[i] + 0.5 * dx[i];
+    xe[i] = xmin + static_cast<double>(i) * ddx;
+    xc[i] = xe[i] + 0.5 * ddx;
   }
-  //  xe[hydro::NX] = xe[hydro::NX - 1] + dx[hydro::NX - 1];
 
   return std::make_tuple(xe, xc, dx);
 }
 
-template <template <index_type> class V, index_type N>
-auto initial_conditions(const V<N>& xc) {
-  V<N> rho, prs, ene, fla;
-  std::array<V<N>, 3> vels;
+template <index_type N>
+auto initial_conditions(const std::vector<double>& xc) {
+  std::vector<double> rho(N), prs(N), ene(N), fla(N);
+  std::array<std::vector<double>, 3> vels = {
+    std::vector<double>(N, 0.0),
+    std::vector<double>(N, 0.0),
+    std::vector<double>(N, 0.0)
+  };
 
   for (size_t i = 0; i < N; ++i) {
     fla[i] = 0.0;
@@ -71,12 +72,6 @@ auto initial_conditions(const V<N>& xc) {
     } else {
       rho[i] = dr;
       prs[i] = pr;
-    }
-  }
-
-  for (auto& v : vels) {
-    for (size_t i = 0; i < N; ++i) {
-      v[i] = 0.0;
     }
   }
 
@@ -143,7 +138,7 @@ int main()
   sweep_x swpx(hydro);
 
   auto [xe, xc, dx] = gridder(0.0, 1.0);
-  auto [r, p, u, e, f] = initial_conditions<VecType, hydro::NX>(xc);
+  auto [r, p, u, e, f] = initial_conditions<hydro::NX>(xc);
 
   std::chrono::duration<double> rt_s(0);
 

@@ -21,7 +21,7 @@ struct state_domain_t : ppmlr_base_t<N> {
 
   vector_type Cdtdx, fCdtdx;
 
-  state_domain_t() = default;
+  state_domain_t() : Cdtdx(base::make_vector()), fCdtdx(base::make_vector()) {}
 
   constexpr inline void build(const hydro::hydro_physics_t& hydro,
                               const vector_type& cdx) {
@@ -42,7 +42,7 @@ struct state_t : ppmlr_base_t<N> {
   using reconstruct_type = ReconstructType;
 
   vector_type l, r;
-  state_t() = default;
+  state_t() : l(base::make_vector()), r(base::make_vector()) {}
 
   constexpr inline void build_state(const reconstruct_type& reco,
                                     const domain_type& domain) {

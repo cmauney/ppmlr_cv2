@@ -36,15 +36,17 @@ struct boundary_conditions_t : ppmlr_base_t<N> {
     }
   }
 
-  inline void apply(grid_type& g, FluidVars<vector_type>& vars) {
+  inline void apply(grid_type& g, vector_type& rho, vector_type& prs,
+                    vector_type& xvl, vector_type& yvl, vector_type& zvl,
+                    vector_type& ent, vector_type& flt) {
     reflect_bc(g.dx[0]);
-    reflect_bc(vars[RHO]);
-    reflect_bc(vars[PRS]);
-    reflect_bc(vars[XVL], -1.0);
-    reflect_bc(vars[YVL]);
-    reflect_bc(vars[ZVL]);
-    reflect_bc(vars[ENT]);
-    reflect_bc(vars[FLT]);
+    reflect_bc(rho);
+    reflect_bc(prs);
+    reflect_bc(xvl, -1.0);
+    reflect_bc(yvl);
+    reflect_bc(zvl);
+    reflect_bc(ent);
+    reflect_bc(flt);
 
     for (index_type i = bp::i0; i < bp::j0; ++i) {
       g.xe[0][bp::j0 - i - 1] = g.xe[0][bp::j0 - i] - g.dx[0][bp::j0 - i - 1];

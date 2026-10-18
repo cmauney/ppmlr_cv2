@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include <tuple>
-#include <valarray>
 
 #include "flatten.hpp"
 #include "hydro_physics.hpp"

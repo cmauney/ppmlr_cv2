@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <string>
@@ -19,29 +20,27 @@ struct parabola_basis_t : ppmlr_base_t<N> {
   using bp = typename base::bp;
   using vector_type = typename base::vector_type;
 
-  // using basis_type = fixed_storage_type<bp::iN * 5>;
-  using basis_type = vector_wrapper_t<bp::iN * 5>;
+  using basis_type = std::vector<double>;
 
   // internal variables
   vector_type a, b, c, d, ai, bi, ci;
 
-  // basis:
-  //  std::array<double, bp::iN * 5> basis;
+  // basis
   basis_type basis;
 
   // spans/views
-  parabola_basis_t() = default;
+  parabola_basis_t() : a(base::make_vector()), b(base::make_vector()),
+                       c(base::make_vector()), d(base::make_vector()),
+                       ai(base::make_vector()), bi(base::make_vector()),
+                       ci(base::make_vector()), basis(bp::iN * 5, 0.0) {}
   ~parabola_basis_t() = default;
 
   constexpr inline void clear() {
-    a.clear();
-    b.clear();
-    c.clear();
-    d.clear();
-    ai.clear();
-    bi.clear();
-    ci.clear();
-    basis.clear();
+    // Modern C++20: clear all vectors efficiently
+    for (auto* vec : {&a, &b, &c, &d, &ai, &bi, &ci}) {
+      std::fill(vec->begin(), vec->end(), 0.0);
+    }
+    std::fill(basis.begin(), basis.end(), 0.0);
   }
 
   constexpr inline void prepare(const vector_type& dx) {
@@ -88,21 +87,19 @@ struct parabola_t : ppmlr_base_t<N> {
   vector_type two_diff_an_abs, two_diff_an_min;
   vector_type tmp1, tmp2, tmp3;
 
-  parabola_t() = default;
+  parabola_t() : da(base::make_vector()), a6(base::make_vector()),
+                 al(base::make_vector()), ar(base::make_vector()),
+                 diff_an(base::make_vector()), del_a(base::make_vector()),
+                 two_diff_an_abs(base::make_vector()), two_diff_an_min(base::make_vector()),
+                 tmp1(base::make_vector()), tmp2(base::make_vector()),
+                 tmp3(base::make_vector()) {}
   ~parabola_t() = default;
 
   constexpr inline void clear() {
-    diff_an.clear();
-    del_a.clear();
-
-    tmp1.clear();
-    tmp2.clear();
-    tmp3.clear();
-
-    da.clear();
-    a6.clear();
-    al.clear();
-    ar.clear();
+    // Modern C++20: clear all vectors efficiently
+    for (auto* vec : {&diff_an, &del_a, &tmp1, &tmp2, &tmp3, &da, &a6, &al, &ar}) {
+      std::fill(vec->begin(), vec->end(), 0.0);
+    }
   }
 
   constexpr inline void construct(const vector_type& a,
@@ -220,11 +217,25 @@ struct parabola_set_t : ppmlr_base_t<N> {
   inline void prepare(const vector_type& dx) { basis.prepare(dx); }
 
   template <size_t FN>
-  constexpr inline void build(const FluidVars<vector_type>& fluid_v,
+  constexpr inline void build(const vector_type& rho, const vector_type& prs,
+                              const vector_type& xvl, const vector_type& yvl,
+                              const vector_type& zvl, const vector_type& ent,
+                              const vector_type& ein, const vector_type& flt,
                               const vector_type& flat,
                               const std::array<FLUID_VI, FN>& fidx) {
     for (FLUID_VI fi : fidx) {
-      parabolas[fi].construct(fluid_v[fi], flat, basis.basis);
+      const vector_type* var = nullptr;
+      switch(fi) {
+        case RHO: var = &rho; break;
+        case PRS: var = &prs; break;
+        case XVL: var = &xvl; break;
+        case YVL: var = &yvl; break;
+        case ZVL: var = &zvl; break;
+        case ENT: var = &ent; break;
+        case EIN: var = &ein; break;
+        case FLT: var = &flt; break;
+      }
+      parabolas[fi].construct(*var, flat, basis.basis);
     }
   }
 

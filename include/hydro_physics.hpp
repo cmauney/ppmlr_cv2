@@ -1,12 +1,14 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <valarray>
+#include <numeric>
+#include <vector>
 
 #include "global_const.hpp"
+#include "global_def.hpp"
 #include "ppmlr/ppm_constant.hpp"
-#include "vector_wrapper.hpp"
 
 namespace hydro {
 
@@ -21,18 +23,16 @@ struct hydro_physics_t {
   hydro_physics_t(double gam)
       : gamma(gam), gammam1(gam - 1), last_dt(ppm::small), svel(zero) {}
 
-  template <index_type N>
-  constexpr inline double ridt(const double svel,
-                               const vector_wrapper_t<N>& xvel,
-                               const vector_wrapper_t<N>& dx) {
-    vector_wrapper_t<N> vm, vabs;
-
-    vabs = xvel.abs();
-    for (index_type i = 0; i < N; ++i) {
-      vm[i] = vabs[i] / dx[i];
+  inline double ridt(const double svel,
+                     const std::vector<double>& xvel,
+                     const std::vector<double>& dx) {
+    // Modern C++20: use std::transform_reduce for max calculation
+    const size_t N = xvel.size();
+    double max_vm = 0.0;
+    for (size_t i = 0; i < N; ++i) {
+      max_vm = std::max(max_vm, std::abs(xvel[i]) / dx[i]);
     }
-
-    return std::max(svel, (vm.max()));
+    return std::max(svel, max_vm);
   }
 
   constexpr inline void set_dt(double timestep) {
@@ -42,26 +42,25 @@ struct hydro_physics_t {
     hdt = half * dt;
   }
 
-  template <index_type N>
-  constexpr inline void first_dt(const vector_wrapper_t<N>& prs,
-                                 const vector_wrapper_t<N>& rho,
-                                 const vector_wrapper_t<N>& xvel,
-                                 const vector_wrapper_t<N>& dx) {
-    vector_wrapper_t<N> ctdx;
-    for (index_type i = 0; i < N; ++i)
-      ctdx[i] = std::sqrt(gamma * prs[i] / rho[i]) / dx[i];
-
-    auto svel = ctdx.max();
+  inline void first_dt(const std::vector<double>& prs,
+                       const std::vector<double>& rho,
+                       const std::vector<double>& xvel,
+                       const std::vector<double>& dx) {
+    // Modern C++20: compute max sound speed
+    const size_t N = prs.size();
+    double svel = 0.0;
+    for (size_t i = 0; i < N; ++i) {
+      svel = std::max(svel, std::sqrt(gamma * prs[i] / rho[i]) / dx[i]);
+    }
 
     dt = courant / ridt(svel, xvel, dx);
     hdt = half * dt;
     last_dt = dt;
   }
 
-  template <index_type N>
-  constexpr inline void dt_courant(double cdx,
-                                   const vector_wrapper_t<N>& xvel,
-                                   const vector_wrapper_t<N>& dx) {
+  inline void dt_courant(double cdx,
+                         const std::vector<double>& xvel,
+                         const std::vector<double>& dx) {
     auto dt_n = courant / ridt(cdx, xvel, dx);
 
     auto dtu = last_dt * 1.1;
