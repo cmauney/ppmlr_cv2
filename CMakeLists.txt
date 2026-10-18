@@ -20,11 +20,28 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color")
 # LTO flags (optional, commented out by default as in Makefile)
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
-# OpenMP (optional, commented out by default as in Makefile)
-# find_package(OpenMP)
-# if(OpenMP_CXX_FOUND)
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-# endif()
+# OpenMP support (optional)
+option(ENABLE_OPENMP "Enable OpenMP threading" OFF)
+option(ENABLE_GPU_OFFLOAD "Enable GPU offloading via OpenMP target" OFF)
+
+if(ENABLE_OPENMP OR ENABLE_GPU_OFFLOAD)
+    find_package(OpenMP)
+    if(OpenMP_CXX_FOUND)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        message(STATUS "OpenMP enabled")
+
+        if(ENABLE_GPU_OFFLOAD)
+            # GPU offload target - uncomment appropriate line for your hardware
+            # NVIDIA GPUs:
+            # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp-targets=nvptx64")
+            # AMD GPUs:
+            # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp-targets=amdgcn-amd-amdhsa")
+            # Intel GPUs:
+            # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp-targets=spir64")
+            message(STATUS "GPU offloading flags NOT set - edit CMakeLists.txt to uncomment target architecture")
+        endif()
+    endif()
+endif()
 
 # Advanced loop optimization flags (requires ISL library)
 # These flags require Graphite support (-fgraphite, -floop-*), which needs ISL

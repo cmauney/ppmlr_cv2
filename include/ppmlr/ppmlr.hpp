@@ -9,6 +9,8 @@
 #include <utility>
 
 #include "boundary_conditions.hpp"
+#include "compute_kernels.hpp"
+#include "fluid_data.hpp"
 #include "hydro_physics.hpp"
 #include "parabola.hpp"
 #include "ppm_constant.hpp"
@@ -112,10 +114,10 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
     build_ekin();
 
-    // Compute entropy
-    for (index_type i = bp::j0; i < bp::jM; ++i) {
-      ent[i] = prs[i] / (this->rho[i] * hydro.gammam1) + ekin[i];
-    }
+    // DEVICE OFFLOAD READY: Entropy computation
+    kernels::compute_entropy(
+        prs.data(), this->rho.data(), ekin.data(), ent.data(),
+        hydro.gammam1, bp::j0, bp::jM);
   }
 
   template <typename V>
@@ -132,25 +134,19 @@ struct ppmlr_t : ppmlr_base_t<N> {
   }
 
   inline void build_ekin() {
-    // Modern C++20: compute kinetic energy with transform
-    std::transform(xvl.begin() + bp::i0, xvl.begin() + bp::iN,
-                   yvl.begin() + bp::i0,
-                   ekin.begin() + bp::i0,
-                   [](double vx, double vy) { return vx * vx + vy * vy; });
-
-    // Add z-component
-    for (index_type i = bp::i0; i < bp::iN; ++i) {
-      ekin[i] = 0.5 * (ekin[i] + zvl[i] * zvl[i]);
-    }
+    // DEVICE OFFLOAD READY: Use compute kernel for kinetic energy
+    // This is embarrassingly parallel and perfect for GPU offload
+    kernels::compute_kinetic_energy(
+        xvl.data(), yvl.data(), zvl.data(), ekin.data(),
+        bp::i0, bp::iN);
   }
 
   inline void build_cdx() {
-    max_cdx = 0.0;
-    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
-      cdx[i] = sqrt(hydro.gamma * prs[i] / rho[i]) /
-               (grid.dx[0][i] * grid.radius);
-      max_cdx = std::max(max_cdx, cdx[i]);
-    }
+    // DEVICE OFFLOAD READY: Sound speed with parallel reduction
+    max_cdx = kernels::compute_sound_speed(
+        prs.data(), rho.data(), grid.dx[0].data(), cdx.data(),
+        hydro.gamma, grid.radius,
+        bp::i0 + 2, bp::iN - 2);
   }
 
   inline void flatten() {
@@ -199,9 +195,13 @@ struct ppmlr_t : ppmlr_base_t<N> {
   inline void evolve() {
     grid.template build_volume<0>();
 
+    // DEVICE OFFLOAD READY: Grid mass and timestep calculation
+    kernels::compute_grid_mass(
+        dm.data(), dtdm.data(), rho.data(), grid.dvol[0].data(),
+        hydro.dt, bp::i0 + 3, bp::iN - 2);
+
+    // Grid update (sequential, stays on host)
     for (index_type i = bp::i0 + 3; i < bp::iN - 2; ++i) {
-      dm[i] = rho[i] * grid.dvol[0][i];
-      dtdm[i] = hydro.dt / dm[i];
       grid.xe[1][i] = grid.xe[0][i] + hydro.dt * umid[i] / grid.radius;
       upmid[i] = umid[i] * pmid[i];
     }
@@ -219,29 +219,27 @@ struct ppmlr_t : ppmlr_base_t<N> {
     grid.template build_volume<1>();
     grid.build_amid();
 
-    // dump_vec_and_keep_calm(bp::i0, bp::iN, grid.xe[0],
-    //                       grid.xe[1]);
+    // DEVICE OFFLOAD READY: Density evolution (Lagrangian step)
+    kernels::evolve_density(
+        rho.data(), grid.dvol[0].data(), grid.dvol[1].data(),
+        bp::i0 + 3, bp::iN - 3);
 
-    for (index_type i = bp::i0 + 3; i < bp::iN - 3; ++i) {
-      rho[i] *= (grid.dvol[0][i] / grid.dvol[1][i]);
+    // DEVICE OFFLOAD READY: Velocity evolution (momentum update)
+    kernels::evolve_velocity(
+        xvl.data(), uold.data(), pmid.data(), grid.amid.data(), dtdm.data(),
+        bp::i0 + 3, bp::iN - 3);
 
-      uold[i] = xvl[i];
-
-      xvl[i] -= dtdm[i] * (pmid[i + 1] - pmid[i]) * 0.5 *
-                (grid.amid[i + 1] + grid.amid[i]);
-
-      ent[i] -=
-          dtdm[i] * (grid.amid[i + 1] * upmid[i + 1] - grid.amid[i] * upmid[i]);
-    }
+    // DEVICE OFFLOAD READY: Energy evolution
+    kernels::evolve_energy(
+        ent.data(), grid.amid.data(), upmid.data(), dtdm.data(),
+        bp::i0 + 3, bp::iN - 3);
 
     build_ekin();
 
-    for (index_type i = bp::i0 + 3; i < bp::iN - 3; ++i) {
-      ein[i] = ent[i] - ekin[i];
-
-      ein[i] =
-          std::max(ein[i], smallp / (hydro.gammam1 * rho[i]));
-    }
+    // DEVICE OFFLOAD READY: Internal energy computation
+    kernels::compute_internal_energy(
+        ein.data(), ent.data(), ekin.data(), rho.data(),
+        hydro.gammam1, bp::i0 + 3, bp::iN - 3);
   }
 
   inline void remap() {
@@ -297,30 +295,30 @@ struct ppmlr_t : ppmlr_base_t<N> {
     //    dump_vec_and_keep_calm(bp::j0, bp::jM + 1,
     //    fluxes[RHO]);
 
-    for (index_type i = bp::j0 - 1; i < bp::jM + 1; ++i) {
-      dm[i] = rho[i] * grid.dvol[1][i];
-      dm0[i] = (dm[i] + fluxes[RHO][i] - fluxes[RHO][i + 1]);
+    // DEVICE OFFLOAD READY: Density remap
+    kernels::remap_density(
+        rho.data(), fluxes[RHO].data(),
+        grid.dvol[0].data(), grid.dvol[1].data(),
+        dm.data(), dm0.data(),
+        bp::j0 - 1, bp::jM + 1);
 
-      rho[i] = dm0[i] / grid.dvol[0][i];
-      rho[i] = std::max(smallr, rho[i]);
+    // DEVICE OFFLOAD READY: Velocity and energy remap
+    kernels::remap_scalar(xvl.data(), fluxes[XVL].data(), dm.data(), dm0.data(),
+                          bp::j0 - 1, bp::jM + 1);
+    kernels::remap_scalar(yvl.data(), fluxes[YVL].data(), dm.data(), dm0.data(),
+                          bp::j0 - 1, bp::jM + 1);
+    kernels::remap_scalar(zvl.data(), fluxes[ZVL].data(), dm.data(), dm0.data(),
+                          bp::j0 - 1, bp::jM + 1);
+    kernels::remap_scalar(ein.data(), fluxes[EIN].data(), dm.data(), dm0.data(),
+                          bp::j0 - 1, bp::jM + 1);
+    kernels::remap_scalar(ent.data(), fluxes[ENT].data(), dm.data(), dm0.data(),
+                          bp::j0 - 1, bp::jM + 1);
 
-      dm0[i] = 1. / (rho[i] * grid.dvol[0][i]);
-
-      xvl[i] = (xvl[i] * dm[i] + fluxes[XVL][i] - fluxes[XVL][i + 1]) * dm0[i];
-      yvl[i] = (yvl[i] * dm[i] + fluxes[YVL][i] - fluxes[YVL][i + 1]) * dm0[i];
-      zvl[i] = (zvl[i] * dm[i] + fluxes[ZVL][i] - fluxes[ZVL][i + 1]) * dm0[i];
-      ein[i] = (ein[i] * dm[i] + fluxes[EIN][i] - fluxes[EIN][i + 1]) * dm0[i];
-      ent[i] = (ent[i] * dm[i] + fluxes[ENT][i] - fluxes[ENT][i + 1]) * dm0[i];
-    }
-
-    // supersonic flow
+    // DEVICE OFFLOAD READY: Supersonic flow and pressure update
     build_ekin();
-    for (index_type i = bp::j0; i < bp::jM; ++i) {
-      if (ekin[i] / ein[i] < 100.0)
-        ein[i] = ent[i] - ekin[i];
-      prs[i] = hydro.gammam1 * rho[i] * ein[i];
-      prs[i] = std::max(smallp, prs[i]);
-    }
+    kernels::compute_pressure(
+        prs.data(), rho.data(), ein.data(), ent.data(), ekin.data(),
+        hydro.gammam1, bp::j0, bp::jM);
 
   }  // remap
 
