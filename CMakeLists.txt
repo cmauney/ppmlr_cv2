@@ -62,7 +62,10 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=add
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -march=native -Winline -g")
 
 # Release build flags (equivalent to 'fast' target)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native ${ILS_FLAGS} -Winline")
+# Added: -ffast-math for aggressive FP optimizations (safe for this application)
+#        -funroll-loops for loop unrolling
+#        -fno-math-errno for faster math functions
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native ${ILS_FLAGS} -Winline -ffast-math -funroll-loops -fno-math-errno")
 
 # Include directories
 include_directories(

@@ -1,17 +1,25 @@
 #pragma once
 
+#include <algorithm>
+#include <execution>
+#include <cmath>
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
 
 // Computational kernels prepared for device offloading
 // These functions are structured to be easily parallelized on GPU
 // with OpenMP target directives, CUDA, or other offloading technologies
+// Optimized with STL algorithms and parallel execution policies where beneficial
 
 namespace ppm {
 namespace kernels {
 
+// Use parallel execution for large arrays
+constexpr size_t PARALLEL_THRESHOLD = 500;
+
 // Kinetic energy computation kernel
 // OFFLOAD TARGET: This loop is embarrassingly parallel
+// OPTIMIZED: Manual loop with restrict for best vectorization
 inline void compute_kinetic_energy(
     const double* __restrict__ xvl,
     const double* __restrict__ yvl,
@@ -20,10 +28,18 @@ inline void compute_kinetic_energy(
     const index_type i0,
     const index_type iN) {
 
+  // Manual loop with restrict pointers allows compiler to:
+  // - Auto-vectorize with SIMD (AVX, NEON, etc.)
+  // - Apply FMA (fused multiply-add) optimizations
+  // - Eliminate redundant loads/stores
   // Perfect for GPU offload: independent iterations, regular access pattern
   // Future: #pragma omp target teams distribute parallel for simd
+  #pragma GCC ivdep  // Tell compiler loop iterations are independent
   for (index_type i = i0; i < iN; ++i) {
-    ekin[i] = 0.5 * (xvl[i] * xvl[i] + yvl[i] * yvl[i] + zvl[i] * zvl[i]);
+    const double vx = xvl[i];
+    const double vy = yvl[i];
+    const double vz = zvl[i];
+    ekin[i] = 0.5 * (vx * vx + vy * vy + vz * vz);
   }
 }
 

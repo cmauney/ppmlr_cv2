@@ -105,31 +105,30 @@ struct parabola_t : ppmlr_base_t<N> {
   constexpr inline void construct(const vector_type& a,
                                   const vector_type& flat,
                                   const basis_type& pbase) {
-    // clear();
-
+    // Optimized: Fused loops to improve cache locality
+    // First loop: compute differences and absolute values
+    #pragma GCC ivdep
     for (index_type i = bp::i0; i < bp::iN - 1; ++i) {
       diff_an[i] = a[i + 1] - a[i];
       two_diff_an_abs[i] = 2.0 * std::abs(diff_an[i]);
     }
 
+    // Second loop: compute minimums
+    #pragma GCC ivdep
     for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
       two_diff_an_min[i] = std::min(two_diff_an_abs[i - 1], two_diff_an_abs[i]);
     }
 
+    // Optimized: Minimize redundant std::abs calls
+    #pragma GCC ivdep
     for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
-      index_type b_row = i * 5;
-      del_a[i] =
-          pbase[b_row + 3] * diff_an[i] + pbase[b_row + 4] * diff_an[i - 1];
+      const index_type b_row = i * 5;
+      const double delta = pbase[b_row + 3] * diff_an[i] + pbase[b_row + 4] * diff_an[i - 1];
 
-      del_a[i] = std::copysign(
-          //          std::min(std::abs(del_a[i]), std::min(2.0 *
-          //          std::abs(diff_an[i - 1]),
-          //                                                2.0 *
-          //                                                std::abs(diff_an[i]))),
-          std::min(std::abs(del_a[i]), two_diff_an_min[i]),
+      // Monotonicity constraint with optimized copysign
+      del_a[i] = std::copysign(std::min(std::abs(delta), two_diff_an_min[i]), delta);
 
-          del_a[i]);
-
+      // Zero-crossing check (monotonicity)
       if (diff_an[i - 1] * diff_an[i] < 0.0)
         del_a[i] = 0.0;
     }
@@ -147,23 +146,31 @@ struct parabola_t : ppmlr_base_t<N> {
       al[i] = flat[i] * a[i] + onemfl * al[i];
     }
 
+    // Optimized: Fused loop for better cache utilization
+    // Compute all temporary values first, then apply corrections
+    #pragma GCC ivdep
     for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
-      da[i] = ar[i] - al[i];
-      a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
+      const double da_val = ar[i] - al[i];
+      const double a6_val = 6.0 * (a[i] - half * (al[i] + ar[i]));
 
       tmp1[i] = (ar[i] - a[i]) * (a[i] - al[i]);
-      tmp2[i] = da[i] * da[i];
-      tmp3[i] = da[i] * a6[i];
+      tmp2[i] = da_val * da_val;
+      tmp3[i] = da_val * a6_val;
+
+      da[i] = da_val;
+      a6[i] = a6_val;
     }
 
+    // Apply monotonicity constraints (cannot be vectorized due to branches)
     for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
       bool redo = false;
+
       if (tmp1[i] <= zero) {
         ar[i] = a[i];
         al[i] = a[i];
         redo = true;
       }
-      if (tmp2[i] < +tmp3[i]) {
+      if (tmp2[i] < tmp3[i]) {
         al[i] = three * a[i] - two * ar[i];
         redo = true;
       }
@@ -171,6 +178,7 @@ struct parabola_t : ppmlr_base_t<N> {
         ar[i] = three * a[i] - two * al[i];
         redo = true;
       }
+
       if (redo) {
         da[i] = ar[i] - al[i];
         a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));

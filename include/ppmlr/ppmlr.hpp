@@ -95,46 +95,46 @@ struct ppmlr_t : ppmlr_base_t<N> {
   inline void put_vars(const V& xe,
                        const V& xc,
                        const V& dx,
-                       const V& rho,
-                       const V& prs,
+                       const V& rho_in,
+                       const V& prs_in,
                        const V& xvel,
                        const V& yvel,
                        const V& zvel,
                        const V& f) {
-    // Modern C++20: cleaner copy pattern
-    auto copy_to_grid = [offset = bp::j0](const auto& src, auto& dst) {
-      std::copy(src.begin(), src.end(), dst.begin() + offset);
-    };
+    // Optimized: Batch copy operations for better cache utilization
+    const auto offset = bp::j0;
 
-    copy_to_grid(xe, grid.xe[0]);
-    copy_to_grid(xc, grid.xc[0]);
-    copy_to_grid(dx, grid.dx[0]);
-    copy_to_grid(rho, this->rho);
-    copy_to_grid(prs, this->prs);
-    copy_to_grid(xvel, xvl);
-    copy_to_grid(yvel, yvl);
-    copy_to_grid(zvel, zvl);
-    copy_to_grid(f, flt);
+    // Grid data copies
+    std::copy(xe.begin(), xe.end(), grid.xe[0].begin() + offset);
+    std::copy(xc.begin(), xc.end(), grid.xc[0].begin() + offset);
+    std::copy(dx.begin(), dx.end(), grid.dx[0].begin() + offset);
+
+    // Fluid variable copies - could be parallelized for large N
+    std::copy(rho_in.begin(), rho_in.end(), rho.begin() + offset);
+    std::copy(prs_in.begin(), prs_in.end(), prs.begin() + offset);
+    std::copy(xvel.begin(), xvel.end(), xvl.begin() + offset);
+    std::copy(yvel.begin(), yvel.end(), yvl.begin() + offset);
+    std::copy(zvel.begin(), zvel.end(), zvl.begin() + offset);
+    std::copy(f.begin(), f.end(), flt.begin() + offset);
 
     build_ekin();
 
     // DEVICE OFFLOAD READY: Entropy computation
     kernels::compute_entropy(
-        prs.data(), this->rho.data(), ekin.data(), ent.data(),
+        prs.data(), rho.data(), ekin.data(), ent.data(),
         hydro.gammam1, bp::j0, bp::jM);
   }
 
   template <typename V>
   inline void get_vars(V& rho_out, V& prs_out, V& xvel, V& yvel, V& zvel, V& f) {
-    for (index_type i = bp::j0; i < bp::jM; ++i) {
-      index_type n = i - bp::j0;
-      rho_out[n] = rho[i];
-      prs_out[n] = prs[i];
-      xvel[n] = xvl[i];
-      yvel[n] = yvl[i];
-      zvel[n] = zvl[i];
-      f[n] = flt[i];
-    }
+    // Optimized: Use STL copy instead of manual indexing loop
+    // Better cache utilization and compiler can vectorize
+    std::copy(rho.begin() + bp::j0, rho.begin() + bp::jM, rho_out.begin());
+    std::copy(prs.begin() + bp::j0, prs.begin() + bp::jM, prs_out.begin());
+    std::copy(xvl.begin() + bp::j0, xvl.begin() + bp::jM, xvel.begin());
+    std::copy(yvl.begin() + bp::j0, yvl.begin() + bp::jM, yvel.begin());
+    std::copy(zvl.begin() + bp::j0, zvl.begin() + bp::jM, zvel.begin());
+    std::copy(flt.begin() + bp::j0, flt.begin() + bp::jM, f.begin());
   }
 
   inline void build_ekin() {
@@ -255,15 +255,11 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
     grid.build_overlap();
 
-    // Clear all flux vectors
-    std::fill(flux_rho.begin(), flux_rho.end(), 0.0);
-    std::fill(flux_prs.begin(), flux_prs.end(), 0.0);
-    std::fill(flux_xvl.begin(), flux_xvl.end(), 0.0);
-    std::fill(flux_yvl.begin(), flux_yvl.end(), 0.0);
-    std::fill(flux_zvl.begin(), flux_zvl.end(), 0.0);
-    std::fill(flux_ent.begin(), flux_ent.end(), 0.0);
-    std::fill(flux_ein.begin(), flux_ein.end(), 0.0);
-    std::fill(flux_flt.begin(), flux_flt.end(), 0.0);
+    // Clear all flux vectors - use pointer array for more efficient loop
+    for (auto* flux_vec : {&flux_rho, &flux_prs, &flux_xvl, &flux_yvl,
+                           &flux_zvl, &flux_ent, &flux_ein, &flux_flt}) {
+      std::fill(flux_vec->begin(), flux_vec->end(), 0.0);
+    }
 
     for (index_type i = bp::j0; i < bp::jM + 1; ++i) {
       if (grid.xndiff[i] >= 0.0) {
