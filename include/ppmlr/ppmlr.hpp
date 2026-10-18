@@ -270,31 +270,31 @@ struct ppmlr_t : ppmlr_base_t<N> {
         fn1 = 0.5 * grid.xndiff[i] / grid.dx[1][i - 1];
         fn2 = 1.0 - fourthird * fn1;
 
-        flux_rho[i] = parabolas[RHO].rc_left(i - 1, fn1, fn2) * grid.xnolap[i];
+        flux_rho[i] = parabolas.para_rho.rc_left(i - 1, fn1, fn2) * grid.xnolap[i];
 
         // Compute fluxes for other variables
-        flux_prs[i] = parabolas[PRS].rc_left(i - 1, fn1, fn2) * flux_rho[i];
-        flux_xvl[i] = parabolas[XVL].rc_left(i - 1, fn1, fn2) * flux_rho[i];
-        flux_yvl[i] = parabolas[YVL].rc_left(i - 1, fn1, fn2) * flux_rho[i];
-        flux_zvl[i] = parabolas[ZVL].rc_left(i - 1, fn1, fn2) * flux_rho[i];
-        flux_ent[i] = parabolas[ENT].rc_left(i - 1, fn1, fn2) * flux_rho[i];
-        flux_ein[i] = parabolas[EIN].rc_left(i - 1, fn1, fn2) * flux_rho[i];
-        flux_flt[i] = parabolas[FLT].rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_prs[i] = parabolas.para_prs.rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_xvl[i] = parabolas.para_xvl.rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_yvl[i] = parabolas.para_yvl.rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_zvl[i] = parabolas.para_zvl.rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_ent[i] = parabolas.para_ent.rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_ein[i] = parabolas.para_ein.rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_flt[i] = parabolas.para_flt.rc_left(i - 1, fn1, fn2) * flux_rho[i];
       } else {
         // tripple check
         fn1 = 0.5 * grid.xndiff[i] / grid.dx[1][i];
         fn2 = 1.0 + fourthird * fn1;
 
-        flux_rho[i] = parabolas[RHO].rc_right(i, -fn1, fn2) * grid.xnolap[i];
+        flux_rho[i] = parabolas.para_rho.rc_right(i, -fn1, fn2) * grid.xnolap[i];
 
         // Compute fluxes for other variables
-        flux_prs[i] = parabolas[PRS].rc_right(i, -fn1, fn2) * flux_rho[i];
-        flux_xvl[i] = parabolas[XVL].rc_right(i, -fn1, fn2) * flux_rho[i];
-        flux_yvl[i] = parabolas[YVL].rc_right(i, -fn1, fn2) * flux_rho[i];
-        flux_zvl[i] = parabolas[ZVL].rc_right(i, -fn1, fn2) * flux_rho[i];
-        flux_ent[i] = parabolas[ENT].rc_right(i, -fn1, fn2) * flux_rho[i];
-        flux_ein[i] = parabolas[EIN].rc_right(i, -fn1, fn2) * flux_rho[i];
-        flux_flt[i] = parabolas[FLT].rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_prs[i] = parabolas.para_prs.rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_xvl[i] = parabolas.para_xvl.rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_yvl[i] = parabolas.para_yvl.rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_zvl[i] = parabolas.para_zvl.rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_ent[i] = parabolas.para_ent.rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_ein[i] = parabolas.para_ein.rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_flt[i] = parabolas.para_flt.rc_right(i, -fn1, fn2) * flux_rho[i];
       }
     }
 
@@ -302,9 +302,9 @@ struct ppmlr_t : ppmlr_base_t<N> {
           fn1 = 0.5 * grid.xndiff[i] / grid.dx[1][i - 1];
           fn2 = 1.0 - fourthird * fn1;
 
-          std::cout << i << " " << i + 1 << " " << parabolas[RHO].al[i - 1] << "
+          std::cout << i << " " << i + 1 << " " << parabolas.para_rho.al[i - 1] << "
        "
-                    << parabolas[RHO].da[i - 1] << " " << parabolas[RHO].a6[i -
+                    << parabolas.para_rho.da[i - 1] << " " << parabolas.para_rho.a6[i -
        1]
                     << " " << flat[i - 1];
 
@@ -373,7 +373,7 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
     states.prepare(hydro, cdx);
 
-    states.build(parabolas.arr());
+    states.build(parabolas);
 
     riemann_solve(hydro, states, pmid, umid);
 

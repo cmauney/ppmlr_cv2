@@ -82,6 +82,15 @@ struct state_set_t : ppmlr_base_t<N> {
     }
   }
 
+  // Build from individual parabola instances (no array indexing)
+  template <typename ParabolaSet>
+  constexpr inline void build(const ParabolaSet& parabolas) {
+    for (index_type i = 0; i < NSt; ++i) {
+      const auto& reco = parabolas.get(fluid_ids[i]);
+      states[i].build_state(reco, domain);
+    }
+  }
+
   constexpr inline const state_type& operator[](const FLUID_VI fi) const {
     for (index_type i = 0; i < NSt; ++i) {
       if (fi == fluid_ids[i])

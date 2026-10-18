@@ -206,10 +206,18 @@ struct parabola_set_t : ppmlr_base_t<N> {
 
   using parabola_type = ParabolaType;
   using parabola_basis = parabola_basis_t<N>;
-  using parabola_array = FluidVars<parabola_type>;
 
   parabola_basis basis;
-  parabola_array parabolas;
+
+  // Individual parabola instances for each fluid variable
+  parabola_type para_rho;
+  parabola_type para_prs;
+  parabola_type para_xvl;
+  parabola_type para_yvl;
+  parabola_type para_zvl;
+  parabola_type para_ent;
+  parabola_type para_ein;
+  parabola_type para_flt;
 
   parabola_set_t() = default;
   ~parabola_set_t() = default;
@@ -224,25 +232,46 @@ struct parabola_set_t : ppmlr_base_t<N> {
                               const vector_type& flat,
                               const std::array<FLUID_VI, FN>& fidx) {
     for (FLUID_VI fi : fidx) {
-      const vector_type* var = nullptr;
       switch(fi) {
-        case RHO: var = &rho; break;
-        case PRS: var = &prs; break;
-        case XVL: var = &xvl; break;
-        case YVL: var = &yvl; break;
-        case ZVL: var = &zvl; break;
-        case ENT: var = &ent; break;
-        case EIN: var = &ein; break;
-        case FLT: var = &flt; break;
+        case RHO: para_rho.construct(rho, flat, basis.basis); break;
+        case PRS: para_prs.construct(prs, flat, basis.basis); break;
+        case XVL: para_xvl.construct(xvl, flat, basis.basis); break;
+        case YVL: para_yvl.construct(yvl, flat, basis.basis); break;
+        case ZVL: para_zvl.construct(zvl, flat, basis.basis); break;
+        case ENT: para_ent.construct(ent, flat, basis.basis); break;
+        case EIN: para_ein.construct(ein, flat, basis.basis); break;
+        case FLT: para_flt.construct(flt, flat, basis.basis); break;
       }
-      parabolas[fi].construct(*var, flat, basis.basis);
     }
   }
 
-  constexpr inline const parabola_type& operator[](const index_type idx) const {
-    return parabolas[idx];
+  // Helper to get parabola by enum (for compatibility, but prefer direct access)
+  constexpr inline const parabola_type& get(FLUID_VI idx) const {
+    switch(idx) {
+      case RHO: return para_rho;
+      case PRS: return para_prs;
+      case XVL: return para_xvl;
+      case YVL: return para_yvl;
+      case ZVL: return para_zvl;
+      case ENT: return para_ent;
+      case EIN: return para_ein;
+      case FLT: return para_flt;
+    }
+    return para_rho; // fallback
   }
 
-  constexpr inline const parabola_array& arr() const { return parabolas; }
+  constexpr inline parabola_type& get(FLUID_VI idx) {
+    switch(idx) {
+      case RHO: return para_rho;
+      case PRS: return para_prs;
+      case XVL: return para_xvl;
+      case YVL: return para_yvl;
+      case ZVL: return para_zvl;
+      case ENT: return para_ent;
+      case EIN: return para_ein;
+      case FLT: return para_flt;
+    }
+    return para_rho; // fallback
+  }
 };
 }// namespace ppm
