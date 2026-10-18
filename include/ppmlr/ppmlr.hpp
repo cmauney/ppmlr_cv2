@@ -64,8 +64,11 @@ struct ppmlr_t : ppmlr_base_t<N> {
   vector_type ekin, cdx;
   // evolve stores
   vector_type dm, dm0, dtdm, pmid, umid, upmid, uold;
-  // remap stores
-  std::array<vector_type, N_FLUIDV> fluxes;
+
+  // remap stores - individual flux vectors for each variable
+  vector_type flux_rho, flux_prs, flux_xvl, flux_yvl, flux_zvl;
+  vector_type flux_ent, flux_ein, flux_flt;
+
   // max svel in sweep
   double max_cdx;
 
@@ -80,10 +83,11 @@ struct ppmlr_t : ppmlr_base_t<N> {
         dm(base::make_vector()), dm0(base::make_vector()),
         dtdm(base::make_vector()), pmid(base::make_vector()),
         umid(base::make_vector()), upmid(base::make_vector()),
-        uold(base::make_vector()) {
-    // Modern C++20: initialize flux arrays with generate
-    std::generate(fluxes.begin(), fluxes.end(), [this] { return base::make_vector(); });
-  }
+        uold(base::make_vector()),
+        flux_rho(base::make_vector()), flux_prs(base::make_vector()),
+        flux_xvl(base::make_vector()), flux_yvl(base::make_vector()),
+        flux_zvl(base::make_vector()), flux_ent(base::make_vector()),
+        flux_ein(base::make_vector()), flux_flt(base::make_vector()) {}
 
   ~ppmlr_t() = default;
 
@@ -251,30 +255,46 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
     grid.build_overlap();
 
-    for (index_type f = 0; f < N_FLUIDV; ++f)
-      std::fill(fluxes[f].begin(), fluxes[f].end(), 0.0);
+    // Clear all flux vectors
+    std::fill(flux_rho.begin(), flux_rho.end(), 0.0);
+    std::fill(flux_prs.begin(), flux_prs.end(), 0.0);
+    std::fill(flux_xvl.begin(), flux_xvl.end(), 0.0);
+    std::fill(flux_yvl.begin(), flux_yvl.end(), 0.0);
+    std::fill(flux_zvl.begin(), flux_zvl.end(), 0.0);
+    std::fill(flux_ent.begin(), flux_ent.end(), 0.0);
+    std::fill(flux_ein.begin(), flux_ein.end(), 0.0);
+    std::fill(flux_flt.begin(), flux_flt.end(), 0.0);
 
     for (index_type i = bp::j0; i < bp::jM + 1; ++i) {
       if (grid.xndiff[i] >= 0.0) {
         fn1 = 0.5 * grid.xndiff[i] / grid.dx[1][i - 1];
         fn2 = 1.0 - fourthird * fn1;
 
-        fluxes[RHO][i] =
-            parabolas[RHO].rc_left(i - 1, fn1, fn2) * grid.xnolap[i];
-        // fix this!
-        for (index_type f = 1; f < N_FLUIDV; ++f) {
-          fluxes[f][i] = parabolas[f].rc_left(i - 1, fn1, fn2) * fluxes[RHO][i];
-        }
+        flux_rho[i] = parabolas[RHO].rc_left(i - 1, fn1, fn2) * grid.xnolap[i];
+
+        // Compute fluxes for other variables
+        flux_prs[i] = parabolas[PRS].rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_xvl[i] = parabolas[XVL].rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_yvl[i] = parabolas[YVL].rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_zvl[i] = parabolas[ZVL].rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_ent[i] = parabolas[ENT].rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_ein[i] = parabolas[EIN].rc_left(i - 1, fn1, fn2) * flux_rho[i];
+        flux_flt[i] = parabolas[FLT].rc_left(i - 1, fn1, fn2) * flux_rho[i];
       } else {
         // tripple check
         fn1 = 0.5 * grid.xndiff[i] / grid.dx[1][i];
         fn2 = 1.0 + fourthird * fn1;
 
-        fluxes[RHO][i] = parabolas[RHO].rc_right(i, -fn1, fn2) * grid.xnolap[i];
-        // fix this!
-        for (index_type f = 1; f < N_FLUIDV; ++f) {
-          fluxes[f][i] = parabolas[f].rc_right(i, -fn1, fn2) * fluxes[RHO][i];
-        }
+        flux_rho[i] = parabolas[RHO].rc_right(i, -fn1, fn2) * grid.xnolap[i];
+
+        // Compute fluxes for other variables
+        flux_prs[i] = parabolas[PRS].rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_xvl[i] = parabolas[XVL].rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_yvl[i] = parabolas[YVL].rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_zvl[i] = parabolas[ZVL].rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_ent[i] = parabolas[ENT].rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_ein[i] = parabolas[EIN].rc_right(i, -fn1, fn2) * flux_rho[i];
+        flux_flt[i] = parabolas[FLT].rc_right(i, -fn1, fn2) * flux_rho[i];
       }
     }
 
@@ -292,26 +312,24 @@ struct ppmlr_t : ppmlr_base_t<N> {
         }
         std::exit(1);
     */
-    //    dump_vec_and_keep_calm(bp::j0, bp::jM + 1,
-    //    fluxes[RHO]);
 
     // DEVICE OFFLOAD READY: Density remap
     kernels::remap_density(
-        rho.data(), fluxes[RHO].data(),
+        rho.data(), flux_rho.data(),
         grid.dvol[0].data(), grid.dvol[1].data(),
         dm.data(), dm0.data(),
         bp::j0 - 1, bp::jM + 1);
 
     // DEVICE OFFLOAD READY: Velocity and energy remap
-    kernels::remap_scalar(xvl.data(), fluxes[XVL].data(), dm.data(), dm0.data(),
+    kernels::remap_scalar(xvl.data(), flux_xvl.data(), dm.data(), dm0.data(),
                           bp::j0 - 1, bp::jM + 1);
-    kernels::remap_scalar(yvl.data(), fluxes[YVL].data(), dm.data(), dm0.data(),
+    kernels::remap_scalar(yvl.data(), flux_yvl.data(), dm.data(), dm0.data(),
                           bp::j0 - 1, bp::jM + 1);
-    kernels::remap_scalar(zvl.data(), fluxes[ZVL].data(), dm.data(), dm0.data(),
+    kernels::remap_scalar(zvl.data(), flux_zvl.data(), dm.data(), dm0.data(),
                           bp::j0 - 1, bp::jM + 1);
-    kernels::remap_scalar(ein.data(), fluxes[EIN].data(), dm.data(), dm0.data(),
+    kernels::remap_scalar(ein.data(), flux_ein.data(), dm.data(), dm0.data(),
                           bp::j0 - 1, bp::jM + 1);
-    kernels::remap_scalar(ent.data(), fluxes[ENT].data(), dm.data(), dm0.data(),
+    kernels::remap_scalar(ent.data(), flux_ent.data(), dm.data(), dm0.data(),
                           bp::j0 - 1, bp::jM + 1);
 
     // DEVICE OFFLOAD READY: Supersonic flow and pressure update
