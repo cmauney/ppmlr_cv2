@@ -84,27 +84,62 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -march=native -Winline -g")
 #        -fno-math-errno for faster math functions
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native ${ILS_FLAGS} -Winline -ffast-math -funroll-loops -fno-math-errno")
 
-# Include directories
-# Note: Kokkos include directories are automatically added by target_link_libraries
-include_directories(
-    ${CMAKE_SOURCE_DIR}/include
+# Collect source files (excluding main.cpp for library)
+file(GLOB LIBRARY_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/print.cpp
 )
 
-# Collect all source files
-file(GLOB_RECURSE SOURCES
-    ${CMAKE_SOURCE_DIR}/src/*.cpp
+# Create library target for ppmlr
+add_library(ppmlr ${LIBRARY_SOURCES})
+
+# Add alias for modern CMake usage
+add_library(ppmlr::ppmlr ALIAS ppmlr)
+
+# Target-specific include directories
+target_include_directories(ppmlr
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+# Target-specific link libraries
+target_link_libraries(ppmlr
+    PUBLIC
+        Kokkos::kokkos
+    PRIVATE
+        m
 )
 
 # Create executable
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
-# Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE m Kokkos::kokkos)
-# Kokkos automatically propagates its compile flags and include directories
-message(STATUS "Linking ${PROJECT_NAME} with Kokkos")
+# Link executable against ppmlr library
+target_link_libraries(${PROJECT_NAME} PRIVATE ppmlr::ppmlr)
+
+message(STATUS "Created ppmlr::ppmlr library target")
+message(STATUS "Linking ${PROJECT_NAME} with ppmlr::ppmlr")
 
 # Installation rules (optional)
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+install(TARGETS ${PROJECT_NAME} ppmlr
+    EXPORT ppmlrTargets
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)
+
+# Install headers
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.hpp"
+)
+
+# Install export targets
+install(EXPORT ppmlrTargets
+    FILE ppmlrTargets.cmake
+    NAMESPACE ppmlr::
+    DESTINATION lib/cmake/ppmlr
+)
 
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
