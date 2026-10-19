@@ -84,36 +84,35 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -march=native -Winline -g")
 #        -fno-math-errno for faster math functions
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native ${ILS_FLAGS} -Winline -ffast-math -funroll-loops -fno-math-errno")
 
-# Collect source files (excluding main.cpp for library)
-file(GLOB LIBRARY_SOURCES
-    ${CMAKE_SOURCE_DIR}/src/print.cpp
-)
-
-# Create library target for ppmlr
-add_library(ppmlr ${LIBRARY_SOURCES})
+# Create INTERFACE library target for header-only ppmlr
+add_library(ppmlr INTERFACE)
 
 # Add alias for modern CMake usage
 add_library(ppmlr::ppmlr ALIAS ppmlr)
 
-# Target-specific include directories
+# Target-specific include directories (INTERFACE for header-only)
 target_include_directories(ppmlr
-    PUBLIC
+    INTERFACE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-# Target-specific link libraries
+# Target-specific link libraries (INTERFACE for header-only)
 target_link_libraries(ppmlr
-    PUBLIC
+    INTERFACE
         Kokkos::kokkos
-    PRIVATE
         m
 )
 
-# Create executable
-add_executable(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/main.cpp)
+# Collect all source files for executable
+file(GLOB SOURCES
+    ${CMAKE_SOURCE_DIR}/src/*.cpp
+)
 
-# Link executable against ppmlr library
+# Create executable
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+# Link executable against ppmlr interface library
 target_link_libraries(${PROJECT_NAME} PRIVATE ppmlr::ppmlr)
 
 message(STATUS "Created ppmlr::ppmlr library target")
