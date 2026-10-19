@@ -88,9 +88,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native ${ILS_FLAGS} -Winli
 # Note: Kokkos include directories are automatically added by target_link_libraries
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    $ENV{HOME}/.local/include
-    /usr/include
-    /usr/local/include
 )
 
 # Collect all source files
