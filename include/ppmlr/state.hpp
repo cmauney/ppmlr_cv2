@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cmath>
 #include <iostream>
 #include <utility>
@@ -53,7 +52,8 @@ struct state_t : ppmlr_base_t<N> {
   }
 };
 
-template <typename StateType, index_type N, index_type NSt>
+// state_set_t with individual state members (no FLUID_VI enum, no std::array)
+template <typename StateType, index_type N>
 struct state_set_t : ppmlr_base_t<N> {
   using base = ppmlr_base_t<N>;
   using vector_type = typename base::vector_type;
@@ -63,40 +63,35 @@ struct state_set_t : ppmlr_base_t<N> {
   using reconstruct_type = typename state_type::reconstruct_type;
 
   domain_type domain;
-  std::array<state_type, NSt> states;
-  std::array<FLUID_VI, NSt> fluid_ids;
+
+  // Individual state members for each variable (RHO, PRS, XVL)
+  state_type rho_state;
+  state_type prs_state;
+  state_type xvl_state;
 
   state_set_t() = default;
-
-  state_set_t(std::array<FLUID_VI, NSt> rcis) : fluid_ids(std::move(rcis)) {}
 
   constexpr inline void prepare(const hydro::hydro_physics_t& hydro,
                                 const vector_type& cdx) {
     domain.build(hydro, cdx);
   }
 
-  template <size_t Sp>
-  constexpr inline void build(const std::array<reconstruct_type, Sp>& recos) {
-    for (index_type i = 0; i < NSt; ++i) {
-      states[i].build_state(recos[fluid_ids[i]], domain);
-    }
-  }
-
-  // Build from individual parabola instances (no array indexing)
+  // Build from individual parabola instances (direct access, no enum)
   template <typename ParabolaSet>
   constexpr inline void build(const ParabolaSet& parabolas) {
-    for (index_type i = 0; i < NSt; ++i) {
-      const auto& reco = parabolas.get(fluid_ids[i]);
-      states[i].build_state(reco, domain);
-    }
+    rho_state.build_state(parabolas.para_rho, domain);
+    prs_state.build_state(parabolas.para_prs, domain);
+    xvl_state.build_state(parabolas.para_xvl, domain);
   }
 
-  constexpr inline const state_type& operator[](const FLUID_VI fi) const {
-    for (index_type i = 0; i < NSt; ++i) {
-      if (fi == fluid_ids[i])
-        return states[i];
-    }
-  }
+  // Direct accessors (replaces operator[] with FLUID_VI)
+  constexpr inline const state_type& rho() const { return rho_state; }
+  constexpr inline const state_type& prs() const { return prs_state; }
+  constexpr inline const state_type& xvl() const { return xvl_state; }
+
+  constexpr inline state_type& rho() { return rho_state; }
+  constexpr inline state_type& prs() { return prs_state; }
+  constexpr inline state_type& xvl() { return xvl_state; }
 };
 
   }  // namespace ppm

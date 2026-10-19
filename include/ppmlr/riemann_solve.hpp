@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cmath>
 #include <iostream>
 #include <utility>
@@ -24,7 +23,7 @@ namespace ppm
       using bp = typename base::bp;
       using vector_type = typename base::vector_type;
 
-      using state_set = state_set_t<StateType, N, N_STATEV>;
+      using state_set = state_set_t<StateType, N>;
 
       double gamfac1, gamfac2;
 
@@ -53,27 +52,27 @@ namespace ppm
         Kokkos::parallel_for("riemann_left_setup",
             Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
             KOKKOS_LAMBDA(const index_type i) {
-              cl(i) = Kokkos::sqrt(gamma * states[PRS].l(i) * states[RHO].l(i));
-              pli(i) = one / states[PRS].l(i);
-              rli(i) = one / states[RHO].l(i);
+              cl(i) = Kokkos::sqrt(gamma * states.prs().l(i) * states.rho().l(i));
+              pli(i) = one / states.prs().l(i);
+              rli(i) = one / states.rho().l(i);
             });
 
         // Phase 2: Compute right state sound speeds and reciprocals (GPU-accelerated)
         Kokkos::parallel_for("riemann_right_setup",
             Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
             KOKKOS_LAMBDA(const index_type i) {
-              cr(i) = Kokkos::sqrt(gamma * states[PRS].r(i) * states[RHO].r(i));
-              pri(i) = one / states[PRS].r(i);
-              rri(i) = one / states[RHO].r(i);
+              cr(i) = Kokkos::sqrt(gamma * states.prs().r(i) * states.rho().r(i));
+              pri(i) = one / states.prs().r(i);
+              rri(i) = one / states.rho().r(i);
             });
 
         // Phase 3: Initial pressure guess from acoustic approximation (GPU-accelerated)
         Kokkos::parallel_for("riemann_initial_guess",
             Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
             KOKKOS_LAMBDA(const index_type i) {
-              double pm = states[PRS].r(i) - states[PRS].l(i) -
-                          cr(i) * (states[XVL].r(i) - states[XVL].l(i));
-              pm = states[PRS].l(i) + pm * cl(i) / (cl(i) + cr(i));
+              double pm = states.prs().r(i) - states.prs().l(i) -
+                          cr(i) * (states.xvl().r(i) - states.xvl().l(i));
+              pm = states.prs().l(i) + pm * cl(i) / (cl(i) + cr(i));
               pmid(i) = Kokkos::fmax(small_riemann, pm);
             });
 
@@ -88,8 +87,8 @@ namespace ppm
                 const double pm = pmid(i);
 
                 // Compute wave speeds
-                double wl_val = one + gamfac2 * (pm - states[PRS].l(i)) * pli(i);
-                double wr_val = one + gamfac2 * (pm - states[PRS].r(i)) * pri(i);
+                double wl_val = one + gamfac2 * (pm - states.prs().l(i)) * pli(i);
+                double wr_val = one + gamfac2 * (pm - states.prs().r(i)) * pri(i);
 
                 wl_val = cl(i) * Kokkos::sqrt(wl_val);
                 wr_val = cr(i) * Kokkos::sqrt(wr_val);
@@ -98,16 +97,16 @@ namespace ppm
                 double zl_val = 4.0 * rli(i) * wl_val * wl_val;
                 double zr_val = 4.0 * rri(i) * wr_val * wr_val;
 
-                zl_val = -zl_val * wl_val / (zl_val - gamfac1 * (pm - states[PRS].l(i)));
-                zr_val = zr_val * wr_val / (zr_val - gamfac1 * (pm - states[PRS].r(i)));
+                zl_val = -zl_val * wl_val / (zl_val - gamfac1 * (pm - states.prs().l(i)));
+                zr_val = zr_val * wr_val / (zr_val - gamfac1 * (pm - states.prs().r(i)));
 
                 // Store for final velocity computation
                 wl(i) = wl_val;
                 wr(i) = wr_val;
 
                 // Compute velocities
-                const double ul = states[XVL].l(i) - (pm - states[PRS].l(i)) / wl_val;
-                const double ur = states[XVL].r(i) + (pm - states[PRS].r(i)) / wr_val;
+                const double ul = states.xvl().l(i) - (pm - states.prs().l(i)) / wl_val;
+                const double ur = states.xvl().r(i) + (pm - states.prs().r(i)) / wr_val;
 
                 // Newton-Raphson update
                 double pm_new = pm + (ur - ul) * (zl_val * zr_val) / (zr_val - zl_val);
@@ -119,8 +118,8 @@ namespace ppm
         Kokkos::parallel_for("riemann_final_velocity",
             Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
             KOKKOS_LAMBDA(const index_type i) {
-              const double ul = states[XVL].l(i) - (pmid(i) - states[PRS].l(i)) / wl(i);
-              const double ur = states[XVL].r(i) + (pmid(i) - states[PRS].r(i)) / wr(i);
+              const double ul = states.xvl().l(i) - (pmid(i) - states.prs().l(i)) / wl(i);
+              const double ur = states.xvl().r(i) + (pmid(i) - states.prs().r(i)) / wr(i);
               umid(i) = half * (ul + ur);
             });
       }

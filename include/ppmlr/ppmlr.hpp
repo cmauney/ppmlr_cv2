@@ -36,7 +36,7 @@ struct ppmlr_t : ppmlr_base_t<N> {
   using state_type = state_t<parabola_type, N>;
 
   using parabola_set = parabola_set_t<parabola_type, N>;
-  using state_set = state_set_t<state_type, N, N_STATEV>;
+  using state_set = state_set_t<state_type, N>;
   using riemann = riemann_t<state_type, N>;
 
   const hydro::hydro_physics_t& hydro;  // reference to 'globals'
@@ -73,7 +73,7 @@ struct ppmlr_t : ppmlr_base_t<N> {
   double max_cdx;
 
   ppmlr_t(const hydro::hydro_physics_t& _hydro)
-      : hydro(_hydro), states(PRIMATIVE_VARS), max_cdx(zero),
+      : hydro(_hydro), max_cdx(zero),
         rho(base::make_vector()), prs(base::make_vector()),
         xvl(base::make_vector()), yvl(base::make_vector()),
         zvl(base::make_vector()), ent(base::make_vector()),
@@ -307,7 +307,7 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
     parabolas.prepare(grid.dx[1]);
 
-    parabolas.build(rho, prs, xvl, yvl, zvl, ent, ein, flt, flat, CONSERVATIVE_VARS);
+    parabolas.build_conservative(rho, xvl, yvl, zvl, ein, ent, flat);
 
     grid.build_overlap();
 
@@ -433,7 +433,7 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
     parabolas.prepare(grid.dx[0]);
 
-    parabolas.build(rho, prs, xvl, yvl, zvl, ent, ein, flt, flat, PRIMATIVE_VARS);
+    parabolas.build_primitive(rho, prs, xvl, flat);
 
     states.prepare(hydro, cdx);
 
