@@ -6,6 +6,8 @@
 #include <tuple>
 #include <vector>
 
+#include <Kokkos_Core.hpp>
+
 #include "hydro_physics.hpp"
 #include "ppmlr/ppm_grid.hpp"
 #include "ppmlr/ppm_vector.hpp"
@@ -130,12 +132,14 @@ struct sweep_x {
 
   sweep_x(const hydro::hydro_physics_t& h) : ppmlr_drv(h) {}
 };
-int main()
+int main(int argc, char* argv[])
 {
-  //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  Kokkos::initialize(argc, argv);
+  {
+    //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
-  hydro::hydro_physics_t hydro(my_gamma);
-  sweep_x swpx(hydro);
+    hydro::hydro_physics_t hydro(my_gamma);
+    sweep_x swpx(hydro);
 
   auto [xe, xc, dx] = gridder(0.0, 1.0);
   auto [r, p, u, e, f] = initial_conditions<hydro::NX>(xc);
@@ -187,6 +191,8 @@ int main()
     /*   std::cout << i << " : " << swp.fluid_v[ppm::RHO][i + ppm::NZ_GHOST] */
     /*             << std::endl; */
 
-    return 0;
+  } // Kokkos scope
+  Kokkos::finalize();
+  return 0;
 }
 

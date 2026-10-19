@@ -6,6 +6,23 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Kokkos configuration (required)
+# Kokkos backend selection
+option(Kokkos_ENABLE_SERIAL "Enable Kokkos Serial backend" ON)
+option(Kokkos_ENABLE_OPENMP "Enable Kokkos OpenMP backend" OFF)
+option(Kokkos_ENABLE_CUDA "Enable Kokkos CUDA backend" OFF)
+option(Kokkos_ENABLE_HIP "Enable Kokkos HIP backend for AMD GPUs" OFF)
+option(Kokkos_ENABLE_SYCL "Enable Kokkos SYCL backend for Intel GPUs" OFF)
+
+# Kokkos architecture flags (uncomment as needed)
+# set(Kokkos_ARCH_NATIVE ON CACHE BOOL "Enable native CPU architecture")
+# For NVIDIA: set(Kokkos_ARCH_AMPERE80 ON) or Kokkos_ARCH_VOLTA70, etc.
+# For AMD: set(Kokkos_ARCH_VEGA90A ON) or appropriate architecture
+
+# Add Kokkos subdirectory (required)
+add_subdirectory(external/kokkos)
+message(STATUS "Kokkos enabled (required)")
+
 # Output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
@@ -68,9 +85,9 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -march=native -Winline -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native ${ILS_FLAGS} -Winline -ffast-math -funroll-loops -fno-math-errno")
 
 # Include directories
+# Note: Kokkos include directories are automatically added by target_link_libraries
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/gsl
     $ENV{HOME}/.local/include
     /usr/include
     /usr/local/include
@@ -85,7 +102,9 @@ file(GLOB_RECURSE SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE m)
+target_link_libraries(${PROJECT_NAME} PRIVATE m Kokkos::kokkos)
+# Kokkos automatically propagates its compile flags and include directories
+message(STATUS "Linking ${PROJECT_NAME} with Kokkos")
 
 # Installation rules (optional)
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)

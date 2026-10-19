@@ -5,8 +5,6 @@
 #include <tuple>
 #include <utility>
 
-//#include "gsl/gsl"
-
 //#include "hydro_physics.hpp"
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"

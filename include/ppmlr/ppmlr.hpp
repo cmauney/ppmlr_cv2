@@ -101,21 +101,52 @@ struct ppmlr_t : ppmlr_base_t<N> {
                        const V& yvel,
                        const V& zvel,
                        const V& f) {
-    // Optimized: Batch copy operations for better cache utilization
+    // Explicit memory management: Host → Device transfer
+    // Create unmanaged views wrapping std::vector data (no copy)
     const auto offset = bp::j0;
+    const auto count = rho_in.size();
 
-    // Grid data copies
-    std::copy(xe.begin(), xe.end(), grid.xe[0].begin() + offset);
-    std::copy(xc.begin(), xc.end(), grid.xc[0].begin() + offset);
-    std::copy(dx.begin(), dx.end(), grid.dx[0].begin() + offset);
+    // Wrap input std::vectors as unmanaged host views
+    auto h_xe = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(xe.data(), count);
+    auto h_xc = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(xc.data(), count);
+    auto h_dx = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(dx.data(), count);
+    auto h_rho = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(rho_in.data(), count);
+    auto h_prs = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(prs_in.data(), count);
+    auto h_xvel = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(xvel.data(), count);
+    auto h_yvel = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(yvel.data(), count);
+    auto h_zvel = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(zvel.data(), count);
+    auto h_f = Kokkos::View<const double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(f.data(), count);
 
-    // Fluid variable copies - could be parallelized for large N
-    std::copy(rho_in.begin(), rho_in.end(), rho.begin() + offset);
-    std::copy(prs_in.begin(), prs_in.end(), prs.begin() + offset);
-    std::copy(xvel.begin(), xvel.end(), xvl.begin() + offset);
-    std::copy(yvel.begin(), yvel.end(), yvl.begin() + offset);
-    std::copy(zvel.begin(), zvel.end(), zvl.begin() + offset);
-    std::copy(f.begin(), f.end(), flt.begin() + offset);
+    // Create subviews of device arrays (active zone only, excluding ghost cells)
+    auto d_xe = Kokkos::subview(grid.xe[0], Kokkos::make_pair(offset, offset + count));
+    auto d_xc = Kokkos::subview(grid.xc[0], Kokkos::make_pair(offset, offset + count));
+    auto d_dx = Kokkos::subview(grid.dx[0], Kokkos::make_pair(offset, offset + count));
+    auto d_rho = Kokkos::subview(rho, Kokkos::make_pair(offset, offset + count));
+    auto d_prs = Kokkos::subview(prs, Kokkos::make_pair(offset, offset + count));
+    auto d_xvl = Kokkos::subview(xvl, Kokkos::make_pair(offset, offset + count));
+    auto d_yvl = Kokkos::subview(yvl, Kokkos::make_pair(offset, offset + count));
+    auto d_zvl = Kokkos::subview(zvl, Kokkos::make_pair(offset, offset + count));
+    auto d_flt = Kokkos::subview(flt, Kokkos::make_pair(offset, offset + count));
+
+    // Explicit deep copy: Host → Device
+    Kokkos::deep_copy(d_xe, h_xe);
+    Kokkos::deep_copy(d_xc, h_xc);
+    Kokkos::deep_copy(d_dx, h_dx);
+    Kokkos::deep_copy(d_rho, h_rho);
+    Kokkos::deep_copy(d_prs, h_prs);
+    Kokkos::deep_copy(d_xvl, h_xvel);
+    Kokkos::deep_copy(d_yvl, h_yvel);
+    Kokkos::deep_copy(d_zvl, h_zvel);
+    Kokkos::deep_copy(d_flt, h_f);
 
     build_ekin();
 
@@ -127,14 +158,38 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
   template <typename V>
   inline void get_vars(V& rho_out, V& prs_out, V& xvel, V& yvel, V& zvel, V& f) {
-    // Optimized: Use STL copy instead of manual indexing loop
-    // Better cache utilization and compiler can vectorize
-    std::copy(rho.begin() + bp::j0, rho.begin() + bp::jM, rho_out.begin());
-    std::copy(prs.begin() + bp::j0, prs.begin() + bp::jM, prs_out.begin());
-    std::copy(xvl.begin() + bp::j0, xvl.begin() + bp::jM, xvel.begin());
-    std::copy(yvl.begin() + bp::j0, yvl.begin() + bp::jM, yvel.begin());
-    std::copy(zvl.begin() + bp::j0, zvl.begin() + bp::jM, zvel.begin());
-    std::copy(flt.begin() + bp::j0, flt.begin() + bp::jM, f.begin());
+    // Explicit memory management: Device → Host transfer
+    const auto count = rho_out.size();
+
+    // Create subviews of device arrays (active zone only)
+    auto d_rho = Kokkos::subview(rho, Kokkos::make_pair(bp::j0, bp::jM));
+    auto d_prs = Kokkos::subview(prs, Kokkos::make_pair(bp::j0, bp::jM));
+    auto d_xvl = Kokkos::subview(xvl, Kokkos::make_pair(bp::j0, bp::jM));
+    auto d_yvl = Kokkos::subview(yvl, Kokkos::make_pair(bp::j0, bp::jM));
+    auto d_zvl = Kokkos::subview(zvl, Kokkos::make_pair(bp::j0, bp::jM));
+    auto d_flt = Kokkos::subview(flt, Kokkos::make_pair(bp::j0, bp::jM));
+
+    // Wrap output std::vectors as unmanaged host views
+    auto h_rho = Kokkos::View<double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(rho_out.data(), count);
+    auto h_prs = Kokkos::View<double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(prs_out.data(), count);
+    auto h_xvel = Kokkos::View<double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(xvel.data(), count);
+    auto h_yvel = Kokkos::View<double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(yvel.data(), count);
+    auto h_zvel = Kokkos::View<double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(zvel.data(), count);
+    auto h_f = Kokkos::View<double*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>(f.data(), count);
+
+    // Explicit deep copy: Device → Host
+    Kokkos::deep_copy(h_rho, d_rho);
+    Kokkos::deep_copy(h_prs, d_prs);
+    Kokkos::deep_copy(h_xvel, d_xvl);
+    Kokkos::deep_copy(h_yvel, d_yvl);
+    Kokkos::deep_copy(h_zvel, d_zvl);
+    Kokkos::deep_copy(h_f, d_flt);
   }
 
   inline void build_ekin() {
@@ -177,7 +232,8 @@ struct ppmlr_t : ppmlr_base_t<N> {
     z[1] = z[2];
     z[bp::iN - 2] = z[bp::iN - 3];
 
-    std::fill(flat.begin(), flat.end(), 0.0);
+    // Zero-fill flat vector using Kokkos
+    Kokkos::deep_copy(flat, 0.0);
     //  for (const auto& [i, im2, im1, ip1, ip2] : r1) {
     for (index_type i = bp::j0 - 4; i < bp::jM + 4; ++i) {
       zsten = std::max(z[i - 1], std::max(z[i], z[i + 1]));
@@ -255,11 +311,15 @@ struct ppmlr_t : ppmlr_base_t<N> {
 
     grid.build_overlap();
 
-    // Clear all flux vectors - use pointer array for more efficient loop
-    for (auto* flux_vec : {&flux_rho, &flux_prs, &flux_xvl, &flux_yvl,
-                           &flux_zvl, &flux_ent, &flux_ein, &flux_flt}) {
-      std::fill(flux_vec->begin(), flux_vec->end(), 0.0);
-    }
+    // Clear all flux vectors using Kokkos deep_copy
+    Kokkos::deep_copy(flux_rho, 0.0);
+    Kokkos::deep_copy(flux_prs, 0.0);
+    Kokkos::deep_copy(flux_xvl, 0.0);
+    Kokkos::deep_copy(flux_yvl, 0.0);
+    Kokkos::deep_copy(flux_zvl, 0.0);
+    Kokkos::deep_copy(flux_ent, 0.0);
+    Kokkos::deep_copy(flux_ein, 0.0);
+    Kokkos::deep_copy(flux_flt, 0.0);
 
     for (index_type i = bp::j0; i < bp::jM + 1; ++i) {
       if (grid.xndiff[i] >= 0.0) {
@@ -337,7 +397,15 @@ struct ppmlr_t : ppmlr_base_t<N> {
   }  // remap
 
   inline void wiggle() {
-    if (xwig * std::accumulate(flat.begin(), flat.end(), 0.0) != 0.0) {
+    // Sum flat array on host (small operation, wiggle is kept on CPU)
+    // Create host mirror and copy
+    auto h_flat = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, flat);
+    double flat_sum = 0.0;
+    for (index_type i = 0; i < bp::iN; ++i) {
+      flat_sum += h_flat(i);
+    }
+
+    if (xwig * flat_sum != 0.0) {
       //      std::cout << "DO WHIG\n";
       grid.store_coords();
 

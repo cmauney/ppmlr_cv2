@@ -7,6 +7,8 @@
 #include <tuple>
 #include <utility>
 
+#include <Kokkos_Core.hpp>
+
 #include "ppm_constant.hpp"
 #include "ppm_def.hpp"
 #include "ppm_grid.hpp"
@@ -20,7 +22,7 @@ struct parabola_basis_t : ppmlr_base_t<N> {
   using bp = typename base::bp;
   using vector_type = typename base::vector_type;
 
-  using basis_type = std::vector<double>;
+  using basis_type = Kokkos::View<double*>;
 
   // internal variables
   vector_type a, b, c, d, ai, bi, ci;
@@ -32,43 +34,51 @@ struct parabola_basis_t : ppmlr_base_t<N> {
   parabola_basis_t() : a(base::make_vector()), b(base::make_vector()),
                        c(base::make_vector()), d(base::make_vector()),
                        ai(base::make_vector()), bi(base::make_vector()),
-                       ci(base::make_vector()), basis(bp::iN * 5, 0.0) {}
+                       ci(base::make_vector()), basis("basis", bp::iN * 5) {}
   ~parabola_basis_t() = default;
 
   constexpr inline void clear() {
-    // Modern C++20: clear all vectors efficiently
-    for (auto* vec : {&a, &b, &c, &d, &ai, &bi, &ci}) {
-      std::fill(vec->begin(), vec->end(), 0.0);
-    }
-    std::fill(basis.begin(), basis.end(), 0.0);
+    // Zero-fill using Kokkos deep_copy
+    Kokkos::deep_copy(a, 0.0);
+    Kokkos::deep_copy(b, 0.0);
+    Kokkos::deep_copy(c, 0.0);
+    Kokkos::deep_copy(d, 0.0);
+    Kokkos::deep_copy(ai, 0.0);
+    Kokkos::deep_copy(bi, 0.0);
+    Kokkos::deep_copy(ci, 0.0);
+    Kokkos::deep_copy(basis, 0.0);
   }
 
   constexpr inline void prepare(const vector_type& dx) {
-    for (index_type i = bp::i0; i < bp::iN - 1; ++i) {
-      a[i] = dx[i] + dx[i + 1];
-      b[i] = a[i] + dx[i];
-      c[i] = a[i] + dx[i + 1];
-      ai[i] = 1. / a[i];
-      bi[i] = 1. / b[i];
-      ci[i] = 1. / c[i];
-    }
+    // Phase 1: Compute geometric factors (GPU-accelerated)
+    Kokkos::parallel_for("basis_prep_phase1",
+        Kokkos::RangePolicy<>(bp::i0, bp::iN - 1),
+        KOKKOS_LAMBDA(const index_type i) {
+          a(i) = dx(i) + dx(i + 1);
+          b(i) = a(i) + dx(i);
+          c(i) = a(i) + dx(i + 1);
+          ai(i) = 1.0 / a(i);
+          bi(i) = 1.0 / b(i);
+          ci(i) = 1.0 / c(i);
+        });
 
-    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
-      size_t b_row = i * 5;
-      d[i] = 1. / (a[i - 1] + a[i + 1]);
-      basis[b_row + 0] =
-          dx[i] * ai[i] + 2.0 * dx[i + 1] * dx[i] * d[i] * ai[i] *
-                              (a[i - 1] * bi[i] - a[i + 1] * ci[i]);
+    // Phase 2: Compute basis coefficients (GPU-accelerated)
+    Kokkos::parallel_for("basis_prep_phase2",
+        Kokkos::RangePolicy<>(bp::i0 + 1, bp::iN - 2),
+        KOKKOS_LAMBDA(const index_type i) {
+          const size_t b_row = i * 5;
+          d(i) = 1.0 / (a(i - 1) + a(i + 1));
+          basis(b_row + 0) = dx(i) * ai(i) + 2.0 * dx(i + 1) * dx(i) * d(i) * ai(i) *
+                             (a(i - 1) * bi(i) - a(i + 1) * ci(i));
 
-      basis[b_row + 1] = -d[i] * dx[i] * a[i - 1] * bi[i];
-      basis[b_row + 2] = d[i] * dx[i + 1] * a[i + 1] * ci[i];
+          basis(b_row + 1) = -d(i) * dx(i) * a(i - 1) * bi(i);
+          basis(b_row + 2) = d(i) * dx(i + 1) * a(i + 1) * ci(i);
 
-      // check this range - upd: should be fine, one extra term worth not
-      // restarting loop;
-      d[i] = dx[i] / (a[i - 1] + dx[i + 1]);
-      basis[b_row + 3] = d[i] * b[i - 1] * ai[i];
-      basis[b_row + 4] = d[i] * c[i] * ai[i - 1];
-    }
+          // Second basis set
+          d(i) = dx(i) / (a(i - 1) + dx(i + 1));
+          basis(b_row + 3) = d(i) * b(i - 1) * ai(i);
+          basis(b_row + 4) = d(i) * c(i) * ai(i - 1);
+        });
   }
 };
 template <index_type N>
@@ -96,101 +106,118 @@ struct parabola_t : ppmlr_base_t<N> {
   ~parabola_t() = default;
 
   constexpr inline void clear() {
-    // Modern C++20: clear all vectors efficiently
-    for (auto* vec : {&diff_an, &del_a, &tmp1, &tmp2, &tmp3, &da, &a6, &al, &ar}) {
-      std::fill(vec->begin(), vec->end(), 0.0);
-    }
+    // Zero-fill using Kokkos deep_copy
+    Kokkos::deep_copy(diff_an, 0.0);
+    Kokkos::deep_copy(del_a, 0.0);
+    Kokkos::deep_copy(tmp1, 0.0);
+    Kokkos::deep_copy(tmp2, 0.0);
+    Kokkos::deep_copy(tmp3, 0.0);
+    Kokkos::deep_copy(da, 0.0);
+    Kokkos::deep_copy(a6, 0.0);
+    Kokkos::deep_copy(al, 0.0);
+    Kokkos::deep_copy(ar, 0.0);
   }
 
   constexpr inline void construct(const vector_type& a,
                                   const vector_type& flat,
                                   const basis_type& pbase) {
-    // Optimized: Fused loops to improve cache locality
-    // First loop: compute differences and absolute values
-    #pragma GCC ivdep
-    for (index_type i = bp::i0; i < bp::iN - 1; ++i) {
-      diff_an[i] = a[i + 1] - a[i];
-      two_diff_an_abs[i] = 2.0 * std::abs(diff_an[i]);
-    }
+    // Phase 1: Compute differences and absolute values (GPU-accelerated)
+    Kokkos::parallel_for("para_diff",
+        Kokkos::RangePolicy<>(bp::i0, bp::iN - 1),
+        KOKKOS_LAMBDA(const index_type i) {
+          diff_an(i) = a(i + 1) - a(i);
+          two_diff_an_abs(i) = 2.0 * Kokkos::fabs(diff_an(i));
+        });
 
-    // Second loop: compute minimums
-    #pragma GCC ivdep
-    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
-      two_diff_an_min[i] = std::min(two_diff_an_abs[i - 1], two_diff_an_abs[i]);
-    }
+    // Phase 2: Compute minimums (GPU-accelerated)
+    Kokkos::parallel_for("para_min",
+        Kokkos::RangePolicy<>(bp::i0 + 1, bp::iN - 2),
+        KOKKOS_LAMBDA(const index_type i) {
+          two_diff_an_min(i) = Kokkos::fmin(two_diff_an_abs(i - 1), two_diff_an_abs(i));
+        });
 
-    // Optimized: Minimize redundant std::abs calls
-    #pragma GCC ivdep
-    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
-      const index_type b_row = i * 5;
-      const double delta = pbase[b_row + 3] * diff_an[i] + pbase[b_row + 4] * diff_an[i - 1];
+    // Phase 3: Monotonicity constraint and delta computation (GPU-accelerated)
+    Kokkos::parallel_for("para_delta",
+        Kokkos::RangePolicy<>(bp::i0 + 1, bp::iN - 2),
+        KOKKOS_LAMBDA(const index_type i) {
+          const index_type b_row = i * 5;
+          const double delta = pbase(b_row + 3) * diff_an(i) + pbase(b_row + 4) * diff_an(i - 1);
 
-      // Monotonicity constraint with optimized copysign
-      del_a[i] = std::copysign(std::min(std::abs(delta), two_diff_an_min[i]), delta);
+          // Monotonicity constraint with copysign
+          double del = Kokkos::copysign(Kokkos::fmin(Kokkos::fabs(delta), two_diff_an_min(i)), delta);
 
-      // Zero-crossing check (monotonicity)
-      if (diff_an[i - 1] * diff_an[i] < 0.0)
-        del_a[i] = 0.0;
-    }
+          // Zero-crossing check (monotonicity) - branch acceptable on modern GPUs
+          if (diff_an(i - 1) * diff_an(i) < 0.0)
+            del = 0.0;
 
-    for (index_type i = bp::i0 + 1; i < bp::iN - 2; ++i) {
-      index_type b_row = i * 5;
-      ar[i] = a[i] + pbase[b_row + 0] * diff_an[i] +
-              pbase[b_row + 1] * del_a[i + 1] + pbase[b_row + 2] * del_a[i];
-      al[i + 1] = ar[i];
-    }
+          del_a(i) = del;
+        });
 
-    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
-      double onemfl = 1.0 - flat[i];
-      ar[i] = flat[i] * a[i] + onemfl * ar[i];
-      al[i] = flat[i] * a[i] + onemfl * al[i];
-    }
+    // Phase 4: Edge state computation (GPU-accelerated)
+    Kokkos::parallel_for("para_edges",
+        Kokkos::RangePolicy<>(bp::i0 + 1, bp::iN - 2),
+        KOKKOS_LAMBDA(const index_type i) {
+          const index_type b_row = i * 5;
+          const double ar_val = a(i) + pbase(b_row + 0) * diff_an(i) +
+                                pbase(b_row + 1) * del_a(i + 1) + pbase(b_row + 2) * del_a(i);
+          ar(i) = ar_val;
+          al(i + 1) = ar_val;
+        });
 
-    // Optimized: Fused loop for better cache utilization
-    // Compute all temporary values first, then apply corrections
-    #pragma GCC ivdep
-    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
-      const double da_val = ar[i] - al[i];
-      const double a6_val = 6.0 * (a[i] - half * (al[i] + ar[i]));
+    // Phase 5: Flattening application (GPU-accelerated)
+    Kokkos::parallel_for("para_flatten",
+        Kokkos::RangePolicy<>(bp::i0 + 2, bp::iN - 2),
+        KOKKOS_LAMBDA(const index_type i) {
+          const double onemfl = 1.0 - flat(i);
+          ar(i) = flat(i) * a(i) + onemfl * ar(i);
+          al(i) = flat(i) * a(i) + onemfl * al(i);
+        });
 
-      tmp1[i] = (ar[i] - a[i]) * (a[i] - al[i]);
-      tmp2[i] = da_val * da_val;
-      tmp3[i] = da_val * a6_val;
+    // Phase 6: Compute parabola coefficients and temps (GPU-accelerated)
+    Kokkos::parallel_for("para_coeffs",
+        Kokkos::RangePolicy<>(bp::i0 + 2, bp::iN - 2),
+        KOKKOS_LAMBDA(const index_type i) {
+          const double da_val = ar(i) - al(i);
+          const double a6_val = 6.0 * (a(i) - half * (al(i) + ar(i)));
 
-      da[i] = da_val;
-      a6[i] = a6_val;
-    }
+          tmp1(i) = (ar(i) - a(i)) * (a(i) - al(i));
+          tmp2(i) = da_val * da_val;
+          tmp3(i) = da_val * a6_val;
 
-    // Apply monotonicity constraints (cannot be vectorized due to branches)
-    for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
-      bool redo = false;
+          da(i) = da_val;
+          a6(i) = a6_val;
+        });
 
-      if (tmp1[i] <= zero) {
-        ar[i] = a[i];
-        al[i] = a[i];
-        redo = true;
-      }
-      if (tmp2[i] < tmp3[i]) {
-        al[i] = three * a[i] - two * ar[i];
-        redo = true;
-      }
-      if (tmp2[i] < -tmp3[i]) {
-        ar[i] = three * a[i] - two * al[i];
-        redo = true;
-      }
+    // Phase 7: Apply monotonicity constraints (GPU-accelerated)
+    // Branch divergence acceptable - ~10-20% overhead on modern GPUs
+    Kokkos::parallel_for("para_monotonicity",
+        Kokkos::RangePolicy<>(bp::i0 + 2, bp::iN - 2),
+        KOKKOS_LAMBDA(const index_type i) {
+          bool redo = false;
+          double ar_new = ar(i);
+          double al_new = al(i);
 
-      if (redo) {
-        da[i] = ar[i] - al[i];
-        a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
-      }
-    }
+          if (tmp1(i) <= zero) {
+            ar_new = a(i);
+            al_new = a(i);
+            redo = true;
+          }
+          if (tmp2(i) < tmp3(i)) {
+            al_new = three * a(i) - two * ar_new;
+            redo = true;
+          }
+          if (tmp2(i) < -tmp3(i)) {
+            ar_new = three * a(i) - two * al_new;
+            redo = true;
+          }
 
-    /*
-       for (index_type i = bp::i0 + 2; i < bp::iN - 2; ++i) {
-          da[i] = ar[i] - al[i];
-          a6[i] = 6.0 * (a[i] - half * (al[i] + ar[i]));
-        }
-    */
+          if (redo) {
+            ar(i) = ar_new;
+            al(i) = al_new;
+            da(i) = ar_new - al_new;
+            a6(i) = 6.0 * (a(i) - half * (al_new + ar_new));
+          }
+        });
   }
 
   constexpr inline double rc_left(const size_t i,

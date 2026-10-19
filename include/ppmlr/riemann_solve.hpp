@@ -5,6 +5,8 @@
 #include <iostream>
 #include <utility>
 
+#include <Kokkos_Core.hpp>
+
 #include "hydro_physics.hpp"
 #include "ppm_constant.hpp"
 #include "ppm_vector.hpp"
@@ -43,62 +45,84 @@ namespace ppm
                              const state_set& states,
                              vector_type& pmid,
                              vector_type& umid) {
-        double gamfac1 = hydro.gamma + one;
-        double gamfac2 = half * gamfac1 / hydro.gamma;
+        const double gamma = hydro.gamma;
+        const double gamfac1 = gamma + one;
+        const double gamfac2 = half * gamfac1 / gamma;
 
-        //        auto lo = NZ_GHOST - 3, hi = nx + 2 * NZ_GHOST - 2;
-        for (index_type i = bp::i0 + 3; i < bp::iN - 2; ++i) {
-          cl[i] = std::sqrt(hydro.gamma * states[PRS].l[i] * states[RHO].l[i]);
-          pli[i] = one / states[PRS].l[i];
-          rli[i] = one / states[RHO].l[i];
-        }
+        // Phase 1: Compute left state sound speeds and reciprocals (GPU-accelerated)
+        Kokkos::parallel_for("riemann_left_setup",
+            Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
+            KOKKOS_LAMBDA(const index_type i) {
+              cl(i) = Kokkos::sqrt(gamma * states[PRS].l(i) * states[RHO].l(i));
+              pli(i) = one / states[PRS].l(i);
+              rli(i) = one / states[RHO].l(i);
+            });
 
-        for (index_type i = bp::i0 + 3; i < bp::iN - 2; ++i) {
-          cr[i] = std::sqrt(hydro.gamma * states[PRS].r[i] * states[RHO].r[i]);
-          pri[i] = one / states[PRS].r[i];
-          rri[i] = one / states[RHO].r[i];
-        }
+        // Phase 2: Compute right state sound speeds and reciprocals (GPU-accelerated)
+        Kokkos::parallel_for("riemann_right_setup",
+            Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
+            KOKKOS_LAMBDA(const index_type i) {
+              cr(i) = Kokkos::sqrt(gamma * states[PRS].r(i) * states[RHO].r(i));
+              pri(i) = one / states[PRS].r(i);
+              rri(i) = one / states[RHO].r(i);
+            });
 
-        for (index_type i = bp::i0 + 3; i < bp::iN - 2; ++i) {
-          pmid[i] = states[PRS].r[i] - states[PRS].l[i] -
-                    cr[i] * (states[XVL].r[i] - states[XVL].l[i]);
-          pmid[i] = states[PRS].l[i] + pmid[i] * cl[i] / (cl[i] + cr[i]);
-          pmid[i] = std::max(small_riemann, pmid[i]);
-        }
+        // Phase 3: Initial pressure guess from acoustic approximation (GPU-accelerated)
+        Kokkos::parallel_for("riemann_initial_guess",
+            Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
+            KOKKOS_LAMBDA(const index_type i) {
+              double pm = states[PRS].r(i) - states[PRS].l(i) -
+                          cr(i) * (states[XVL].r(i) - states[XVL].l(i));
+              pm = states[PRS].l(i) + pm * cl(i) / (cl(i) + cr(i));
+              pmid(i) = Kokkos::fmax(small_riemann, pm);
+            });
 
-        for (index_type i = bp::i0 + 3; i < bp::iN - 2; ++i) {
-          for (index_type n = 0; n < NewRapItr; ++n) {
-            pmold[i] = pmid[i];
-            wl[i] = one + gamfac2 * (pmid[i] - states[PRS].l[i]) * pli[i];
-            wr[i] = one + gamfac2 * (pmid[i] - states[PRS].r[i]) * pri[i];
+        // Phase 4: Newton-Raphson iteration (GPU-accelerated)
+        // Fixed iteration count for GPU efficiency (no early exit)
+        Kokkos::parallel_for("riemann_newton_raphson",
+            Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
+            KOKKOS_LAMBDA(const index_type i) {
+              // Newton-Raphson: 12 iterations (sufficient for convergence in practice)
+              // Early exit removed for GPU warp efficiency
+              for (index_type n = 0; n < NewRapItr; ++n) {
+                const double pm = pmid(i);
 
-            wl[i] = cl[i] * std::sqrt(wl[i]);
-            wr[i] = cr[i] * std::sqrt(wr[i]);
+                // Compute wave speeds
+                double wl_val = one + gamfac2 * (pm - states[PRS].l(i)) * pli(i);
+                double wr_val = one + gamfac2 * (pm - states[PRS].r(i)) * pri(i);
 
-            zl[i] = 4.0 * rli[i] * wl[i] * wl[i];
-            zr[i] = 4.0 * rri[i] * wr[i] * wr[i];
+                wl_val = cl(i) * Kokkos::sqrt(wl_val);
+                wr_val = cr(i) * Kokkos::sqrt(wr_val);
 
-            zl[i] = -zl[i] * wl[i] /
-                    (zl[i] - gamfac1 * (pmid[i] - states[PRS].l[i]));
-            zr[i] = zr[i] * wr[i] /
-                    (zr[i] - gamfac1 * (pmid[i] - states[PRS].r[i]));
+                // Compute impedances
+                double zl_val = 4.0 * rli(i) * wl_val * wl_val;
+                double zr_val = 4.0 * rri(i) * wr_val * wr_val;
 
-            umidl[i] = states[XVL].l[i] - (pmid[i] - states[PRS].l[i]) / wl[i];
-            umidr[i] = states[XVL].r[i] + (pmid[i] - states[PRS].r[i]) / wr[i];
+                zl_val = -zl_val * wl_val / (zl_val - gamfac1 * (pm - states[PRS].l(i)));
+                zr_val = zr_val * wr_val / (zr_val - gamfac1 * (pm - states[PRS].r(i)));
 
-            pmid[i] +=
-                (umidr[i] - umidl[i]) * (zl[i] * zr[i]) / (zr[i] - zl[i]);
-            pmid[i] = std::max(small_riemann, pmid[i]);
-            if (std::abs(pmid[i] - pmold[i]) / pmid[i] < NewRapTol)
-              break;
-          }
-        }
+                // Store for final velocity computation
+                wl(i) = wl_val;
+                wr(i) = wr_val;
 
-        for (index_type i = bp::i0 + 3; i < bp::iN - 2; ++i) {
-          umidl[i] = states[XVL].l[i] - (pmid[i] - states[PRS].l[i]) / wl[i];
-          umidr[i] = states[XVL].r[i] + (pmid[i] - states[PRS].r[i]) / wr[i];
-          umid[i] = half * (umidl[i] + umidr[i]);
-        }
+                // Compute velocities
+                const double ul = states[XVL].l(i) - (pm - states[PRS].l(i)) / wl_val;
+                const double ur = states[XVL].r(i) + (pm - states[PRS].r(i)) / wr_val;
+
+                // Newton-Raphson update
+                double pm_new = pm + (ur - ul) * (zl_val * zr_val) / (zr_val - zl_val);
+                pmid(i) = Kokkos::fmax(small_riemann, pm_new);
+              }
+            });
+
+        // Phase 5: Final velocity computation (GPU-accelerated)
+        Kokkos::parallel_for("riemann_final_velocity",
+            Kokkos::RangePolicy<>(bp::i0 + 3, bp::iN - 2),
+            KOKKOS_LAMBDA(const index_type i) {
+              const double ul = states[XVL].l(i) - (pmid(i) - states[PRS].l(i)) / wl(i);
+              const double ur = states[XVL].r(i) + (pmid(i) - states[PRS].r(i)) / wr(i);
+              umid(i) = half * (ul + ur);
+            });
       }
     };
 

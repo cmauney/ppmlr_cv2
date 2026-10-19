@@ -4,6 +4,8 @@
 #include <utility>
 #include <vector>
 
+#include <Kokkos_Core.hpp>
+
 #include "global_def.hpp"
 #include "ppmlr/ppm_constant.hpp"
 
@@ -35,12 +37,20 @@ template <index_type N>
 struct ppmlr_base_t {
   constexpr static index_type vlen = N;
 
-  using vector_type = std::vector<double>;
+  // Kokkos view for device offloading
+  // Uses default execution space memory (device for CUDA/HIP, host for Serial/OpenMP)
+  using vector_type = Kokkos::View<double*>;
   using bp = ppmlr_vf_t<N>;
 
   // Helper to create properly sized vector with ghost cells
+  // Label string aids debugging with Kokkos profiling tools
   static vector_type make_vector() {
-    return vector_type(bp::iN, 0.0);
+    return vector_type("vector", bp::iN);
+  }
+
+  // Helper to create named vector (for better profiling visibility)
+  static vector_type make_vector(const char* label) {
+    return vector_type(label, bp::iN);
   }
 };
 
